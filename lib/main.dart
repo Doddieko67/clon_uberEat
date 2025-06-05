@@ -9,6 +9,10 @@ import 'package:clonubereat/screens/customer/customer_home_screen.dart';
 import 'package:clonubereat/screens/customer/order_history_screen.dart';
 import 'package:clonubereat/screens/customer/order_tracking_screen.dart';
 import 'package:clonubereat/screens/customer/store_detail_screen.dart';
+import 'package:clonubereat/screens/store/menu_management_screen.dart';
+import 'package:clonubereat/screens/store/order_management_screen.dart';
+import 'package:clonubereat/screens/store/store_dashboard_screen.dart';
+import 'package:clonubereat/screens/store/store_profile_settings_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +64,7 @@ class CampusEatsApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/customer-home',
+        initialRoute: '/store-dashboard',
 
         // Configuración de rutas
         routes: {
@@ -79,13 +83,10 @@ class CampusEatsApp extends StatelessWidget {
           '/customer-order-history': (context) => OrderHistoryScreen(),
 
           // Rutas para Tienda
-          '/store-dashboard': (context) => StoreDashboardPlaceholder(),
-          '/store-order-management': (context) =>
-              StoreOrderManagementPlaceholder(),
-          '/store-menu-management': (context) =>
-              StoreMenuManagementPlaceholder(),
-          '/store-profile-settings': (context) =>
-              StoreProfileSettingsPlaceholder(),
+          '/store-dashboard': (context) => StoreDashboardScreen(),
+          '/store-order-management': (context) => OrderManagementScreen(),
+          '/store-menu-management': (context) => MenuManagementScreen(),
+          '/store-profile-settings': (context) => StoreProfileSettingsScreen(),
 
           // Rutas para Repartidor
           '/deliverer-dashboard': (context) => DelivererDashboardPlaceholder(),
@@ -163,115 +164,6 @@ class CampusEatsApp extends StatelessWidget {
 
 // PANTALLAS PLACEHOLDER TEMPORALES CON TEMA OSCURO
 // Estas son pantallas temporales que puedes reemplazar con las reales
-
-class StoreDashboardPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Panel de Tienda'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppGradients.secondary,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.store,
-                size: 64,
-                color: AppColors.textOnSecondary,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Panel de Tienda',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Gestiona tu negocio',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/profile'),
-              icon: Icon(Icons.person),
-              label: Text('Ver Perfil'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class StoreOrderManagementPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Gestión de Pedidos'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Gestión de Pedidos',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class StoreMenuManagementPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Gestión de Menú'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Gestión de Menú',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class StoreProfileSettingsPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Configuración de Tienda'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Configuración de Tienda',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
 
 class DelivererDashboardPlaceholder extends StatelessWidget {
   @override
