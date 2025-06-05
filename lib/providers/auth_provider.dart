@@ -62,6 +62,15 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  AuthProvider() {
+    _user = User(
+      id: 'dev-user-123',
+      name: 'Usuario Demo',
+      email: 'demo@campus.edu',
+      role: 'costumer',
+    );
+  }
+
   // Getters
   User? get user => _user;
   bool get isLoading => _isLoading;

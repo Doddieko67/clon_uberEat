@@ -128,7 +128,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             _buildCategories(),
 
             // Featured Banner
-            _buildFeaturedBanner(),
+            // _buildFeaturedBanner(),
 
             // Stores List
             Expanded(child: _buildStoresList()),
@@ -317,77 +317,77 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
-  Widget _buildFeaturedBanner() {
-    return Container(
-      margin: EdgeInsets.all(20),
-      height: 140,
-      decoration: BoxDecoration(
-        gradient: AppGradients.primary,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryWithOpacity(0.3),
-            blurRadius: 12,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -20,
-            top: -20,
-            child: Icon(
-              Icons.local_offer,
-              size: 100,
-              color: AppColors.primaryWithOpacity(0.2),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '🔥 Oferta Especial',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textOnPrimary,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Envío gratis en pedidos mayores a \$200',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textOnPrimary.withOpacity(0.9),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.textOnPrimary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Válido hoy',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildFeaturedBanner() {
+  //   return Container(
+  //     margin: EdgeInsets.all(20),
+  //     height: 140,
+  //     decoration: BoxDecoration(
+  //       gradient: AppGradients.primary,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: AppColors.primaryWithOpacity(0.3),
+  //           blurRadius: 12,
+  //           offset: Offset(0, 6),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Stack(
+  //       children: [
+  //         Positioned(
+  //           right: -20,
+  //           top: -20,
+  //           child: Icon(
+  //             Icons.local_offer,
+  //             size: 100,
+  //             color: AppColors.primaryWithOpacity(0.2),
+  //           ),
+  //         ),
+  //         Padding(
+  //           padding: EdgeInsets.all(20),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             mainAxisAlignment: MainAxisAlignment.center,
+  //             children: [
+  //               Text(
+  //                 '🔥 Oferta Especial',
+  //                 style: TextStyle(
+  //                   fontSize: 18,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: AppColors.textOnPrimary,
+  //                 ),
+  //               ),
+  //               SizedBox(height: 8),
+  //               Text(
+  //                 'Envío gratis en pedidos mayores a \$200',
+  //                 style: TextStyle(
+  //                   fontSize: 14,
+  //                   color: AppColors.textOnPrimary.withOpacity(0.9),
+  //                 ),
+  //               ),
+  //               SizedBox(height: 12),
+  //               Container(
+  //                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //                 decoration: BoxDecoration(
+  //                   color: AppColors.textOnPrimary,
+  //                   borderRadius: BorderRadius.circular(20),
+  //                 ),
+  //                 child: Text(
+  //                   'Válido hoy',
+  //                   style: TextStyle(
+  //                     fontSize: 12,
+  //                     fontWeight: FontWeight.w600,
+  //                     color: AppColors.primary,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildStoresList() {
     final stores = _filteredStores;
@@ -555,7 +555,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            SizedBox(width: 16),
+                          ],
+                        ),
+                        Row(
+                          children: [
                             Icon(
                               Icons.delivery_dining,
                               size: 16,

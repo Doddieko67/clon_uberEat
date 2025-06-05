@@ -13,7 +13,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _rememberMe = false;
 
   @override
   void initState() {
@@ -271,35 +270,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildRememberAndForgot() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Recordarme
-        Row(
-          children: [
-            Checkbox(
-              value: _rememberMe,
-              onChanged: (value) {
-                setState(() {
-                  _rememberMe = value ?? false;
-                });
-              },
-              activeColor: AppColors.primary,
-              checkColor: AppColors.textOnPrimary,
-            ),
-            Text(
-              'Recordarme',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-
         // Olvidé mi contraseña
         TextButton(
           onPressed: () {
             Navigator.pushNamed(context, '/forgot-password');
           },
           child: Text(
-            '¿Contraseña?',
+            'Ay, ¿olvidaste la contraseña?',
             style: TextStyle(
               color: AppColors.primary,
               fontWeight: FontWeight.w600,

@@ -14,11 +14,18 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  void _initalizeAuthState() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login("deyta@gmail.com", "mamiLenia");
+    print(success);
+  }
+
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _checkAuthStatus();
+    _initalizeAuthState();
+    // _checkAuthStatus();
   }
 
   void _setupAnimations() {

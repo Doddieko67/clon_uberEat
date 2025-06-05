@@ -226,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Mi Perfil'),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.divider,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [

@@ -3,7 +3,11 @@ import 'package:clonubereat/screens/common/login_screen.dart';
 import 'package:clonubereat/screens/common/profile_screen.dart';
 import 'package:clonubereat/screens/common/register_screen.dart';
 import 'package:clonubereat/screens/common/splash_screen.dart';
+import 'package:clonubereat/screens/customer/cart_screen.dart';
+import 'package:clonubereat/screens/customer/checkout_screen.dart';
 import 'package:clonubereat/screens/customer/customer_home_screen.dart';
+import 'package:clonubereat/screens/customer/order_history_screen.dart';
+import 'package:clonubereat/screens/customer/order_tracking_screen.dart';
 import 'package:clonubereat/screens/customer/store_detail_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -25,13 +29,19 @@ void main() async {
 
   // Aquí inicializarías Firebase cuando lo agregues:
   await Firebase.initializeApp();
-
   runApp(CampusEatsApp());
 }
 
 class CampusEatsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    void initalizeAuthState() async {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login("deyta@gmail.com", "mamiLenia");
+      print(success);
+    }
+
+    initalizeAuthState();
     return MultiProvider(
       providers: [
         // Provider para la autenticación
@@ -50,7 +60,7 @@ class CampusEatsApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/',
+        initialRoute: '/customer-home',
 
         // Configuración de rutas
         routes: {
@@ -62,14 +72,11 @@ class CampusEatsApp extends StatelessWidget {
 
           // Rutas para Cliente
           '/customer-home': (context) => CustomerHomeScreen(),
-          '/customer-store-detail': (context) =>
-              CustomerStoreDetailPlaceholder(),
-          '/customer-cart': (context) => StoreDetailScreen(),
-          '/customer-checkout': (context) => CustomerCheckoutPlaceholder(),
-          '/customer-order-tracking': (context) =>
-              CustomerOrderTrackingPlaceholder(),
-          '/customer-order-history': (context) =>
-              CustomerOrderHistoryPlaceholder(),
+          '/customer-store-detail': (context) => StoreDetailScreen(),
+          '/customer-cart': (context) => CartScreen(),
+          '/customer-checkout': (context) => CheckoutScreen(),
+          '/customer-order-tracking': (context) => OrderTrackingScreen(),
+          '/customer-order-history': (context) => OrderHistoryScreen(),
 
           // Rutas para Tienda
           '/store-dashboard': (context) => StoreDashboardPlaceholder(),
@@ -156,163 +163,6 @@ class CampusEatsApp extends StatelessWidget {
 
 // PANTALLAS PLACEHOLDER TEMPORALES CON TEMA OSCURO
 // Estas son pantallas temporales que puedes reemplazar con las reales
-
-class CustomerHomePlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Cliente - Inicio'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: AppGradients.primary,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.restaurant,
-                size: 64,
-                color: AppColors.textOnPrimary,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Bienvenido Cliente',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Panel de Cliente - Campus Eats',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-            ),
-            SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/profile'),
-              icon: Icon(Icons.person),
-              label: Text('Ver Perfil'),
-            ),
-            SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login',
-                (route) => false,
-              ),
-              icon: Icon(Icons.logout),
-              label: Text('Cerrar Sesión'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerStoreDetailPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Detalle de Tienda'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Detalle de Tienda',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerCartPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Carrito'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Carrito',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerCheckoutPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Checkout'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Checkout',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerOrderTrackingPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Seguimiento de Pedido'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Seguimiento de Pedido',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerOrderHistoryPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Historial de Pedidos'),
-        backgroundColor: AppColors.surface,
-      ),
-      body: Center(
-        child: Text(
-          'Pantalla de Historial de Pedidos',
-          style: TextStyle(fontSize: 18, color: AppColors.textPrimary),
-        ),
-      ),
-    );
-  }
-}
 
 class StoreDashboardPlaceholder extends StatelessWidget {
   @override

@@ -144,6 +144,15 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _products.keys.length, vsync: this);
+
+    // Listener para detectar cambios de tab
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {
+          // Actualizar cuando cambie el tab
+        });
+      }
+    });
   }
 
   @override
@@ -488,23 +497,70 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
   }
 
   Widget _buildProductsList() {
-    return SliverFillRemaining(
-      child: TabBarView(
-        controller: _tabController,
-        children: _products.entries.map((entry) {
-          final category = entry.key;
-          final products = entry.value;
+    // SOLUCIÓN: Eliminar TabBarView completamente y usar solo SliverList
+    final selectedCategory = _products.keys.elementAt(_tabController.index);
+    final allProducts = _products[selectedCategory] ?? [];
 
-          return ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final product = products[index];
-              return _buildProductCard(product);
-            },
-          );
-        }).toList(),
-      ),
+    // Filtrar por búsqueda
+    final products = _searchController.text.isEmpty
+        ? allProducts
+        : allProducts
+              .where(
+                (product) =>
+                    product['name'].toLowerCase().contains(
+                      _searchController.text.toLowerCase(),
+                    ) ||
+                    product['description'].toLowerCase().contains(
+                      _searchController.text.toLowerCase(),
+                    ),
+              )
+              .toList();
+
+    if (products.isEmpty && _searchController.text.isNotEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: Column(
+            children: [
+              Icon(Icons.search_off, size: 64, color: AppColors.textTertiary),
+              SizedBox(height: 16),
+              Text(
+                'No se encontraron productos',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Intenta con otra búsqueda',
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index >= products.length) return null;
+
+        final product = products[index];
+        final isLast = index == products.length - 1;
+        final extraBottomPadding = isLast && _totalItems > 0 ? 100.0 : 0.0;
+
+        return Container(
+          margin: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            bottom: 16 + extraBottomPadding,
+            top: index == 0 ? 8 : 0,
+          ),
+          child: _buildProductCard(product),
+        );
+      }, childCount: products.length),
     );
   }
 
@@ -512,7 +568,6 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     final quantity = _cartItems[product['id']] ?? 0;
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -553,40 +608,34 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        if (product['isPopular']) ...[
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.warning,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              '🔥 Popular',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textOnPrimary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                        ],
-                        Expanded(
-                          child: Text(
-                            product['name'],
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
+                    if (product['isPopular']) ...[
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '🔥 Popular',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textOnPrimary,
                           ),
                         ),
-                      ],
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                    Text(
+                      product['name'],
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
 
                     SizedBox(height: 4),
@@ -603,14 +652,22 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
 
                     SizedBox(height: 8),
 
+                    Text(
+                      '${product['preparationTime']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                        fontWeight: FontWeight.w200,
+                      ),
+                    ),
                     Row(
                       children: [
                         Text(
                           '\$${product['price'].toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            fontWeight: FontWeight.w100,
+                            color: AppColors.primaryLight,
                           ),
                         ),
 
@@ -625,16 +682,6 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                             ),
                           ),
                         ],
-
-                        Spacer(),
-
-                        Text(
-                          '${product['preparationTime']}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
                       ],
                     ),
                   ],
