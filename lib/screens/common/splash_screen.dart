@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _initalizeAuthState() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login("deyta@gmail.com", "mamiLenia");
+    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
     print(success);
   }
 

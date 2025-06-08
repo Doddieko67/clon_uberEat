@@ -9,6 +9,9 @@ import 'package:clonubereat/screens/customer/customer_home_screen.dart';
 import 'package:clonubereat/screens/customer/order_history_screen.dart';
 import 'package:clonubereat/screens/customer/order_tracking_screen.dart';
 import 'package:clonubereat/screens/customer/store_detail_screen.dart';
+import 'package:clonubereat/screens/deliverer/deliverer_dashboard_screen.dart';
+import 'package:clonubereat/screens/deliverer/delivery_details_screen.dart';
+import 'package:clonubereat/screens/deliverer/delivery_history_screen.dart';
 import 'package:clonubereat/screens/store/menu_management_screen.dart';
 import 'package:clonubereat/screens/store/order_management_screen.dart';
 import 'package:clonubereat/screens/store/store_dashboard_screen.dart';
@@ -39,13 +42,6 @@ void main() async {
 class CampusEatsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    void initalizeAuthState() async {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login("deyta@gmail.com", "mamiLenia");
-      print(success);
-    }
-
-    initalizeAuthState();
     return MultiProvider(
       providers: [
         // Provider para la autenticación
@@ -64,7 +60,7 @@ class CampusEatsApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/store-dashboard',
+        initialRoute: '/deliverer-dashboard',
 
         // Configuración de rutas
         routes: {
@@ -89,12 +85,11 @@ class CampusEatsApp extends StatelessWidget {
           '/store-profile-settings': (context) => StoreProfileSettingsScreen(),
 
           // Rutas para Repartidor
-          '/deliverer-dashboard': (context) => DelivererDashboardPlaceholder(),
-          '/deliverer-delivery-details': (context) =>
-              DelivererDeliveryDetailsPlaceholder(),
+          '/deliverer-dashboard': (context) => DelivererDashboardScreen(),
+          '/deliverer-delivery-details': (context) => DeliveryDetailsScreen(),
           '/deliverer-customer-location': (context) =>
               DelivererCustomerLocationPlaceholder(),
-          '/deliverer-history': (context) => DelivererHistoryPlaceholder(),
+          '/deliverer-history': (context) => DeliveryHistoryScreen(),
 
           // Rutas para Admin
           '/admin-dashboard': (context) => AdminDashboardPlaceholder(),
