@@ -143,29 +143,18 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo con gradiente
+        // --- INICIO DEL CAMBIO ---
+        // Logo desde assets en lugar del icono
         Container(
-          width: 80,
-          height: 80,
           margin: EdgeInsets.only(bottom: 24),
-          decoration: BoxDecoration(
-            gradient: AppGradients.primary,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryWithOpacity(0.4),
-                blurRadius: 15,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.restaurant,
-            size: 40,
-            color: AppColors.textOnPrimary,
+          child: Image.asset(
+            'assets/images/logo.png', // Ruta a tu logo
+            width: 220, // Ajusta el tamaño según tu logo
+            height: 220,
           ),
         ),
 
+        // --- FIN DEL CAMBIO ---
         Text(
           'Bienvenido',
           style: TextStyle(
@@ -178,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SizedBox(height: 8),
 
         Text(
-          'Inicia sesión en tu cuenta de Campus Eats',
+          'Inicia sesión en tu cuenta de UBERecus Eat',
           style: TextStyle(
             fontSize: 16,
             color: AppColors.textSecondary, // Texto secundario claro
@@ -394,7 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Icon(Icons.info_outline, color: AppColors.primary, size: 20),
           SizedBox(height: 8),
           Text(
-            'Campus Eats está disponible solo dentro del campus escolar. Asegúrate de estar conectado a la red de la escuela.',
+            'UBERecus Eat está disponible solo dentro del campus escolar. Asegúrate de estar conectado a la red de la escuela.',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary, // Texto claro sobre fondo oscuro

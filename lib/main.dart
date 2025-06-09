@@ -1,3 +1,7 @@
+import 'package:clonubereat/screens/admin/admin_dashboard_screen.dart';
+import 'package:clonubereat/screens/admin/delivery_zone_management_screen.dart';
+import 'package:clonubereat/screens/admin/store_management_screen.dart';
+import 'package:clonubereat/screens/admin/user_management_screen.dart';
 import 'package:clonubereat/screens/common/forgot_password_screen.dart';
 import 'package:clonubereat/screens/common/login_screen.dart';
 import 'package:clonubereat/screens/common/profile_screen.dart';
@@ -53,14 +57,14 @@ class CampusEatsApp extends StatelessWidget {
         // ChangeNotifierProvider(create: (context) => StoreProvider()),
       ],
       child: MaterialApp(
-        title: 'Campus Eats',
+        title: 'UBERecus Eat',
         debugShowCheckedModeBanner: false,
 
         // Tema personalizado OSCURO de la aplicación
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/deliverer-dashboard',
+        initialRoute: '/',
 
         // Configuración de rutas
         routes: {
@@ -92,13 +96,11 @@ class CampusEatsApp extends StatelessWidget {
           '/deliverer-history': (context) => DeliveryHistoryScreen(),
 
           // Rutas para Admin
-          '/admin-dashboard': (context) => AdminDashboardPlaceholder(),
-          '/admin-user-management': (context) =>
-              AdminUserManagementPlaceholder(),
-          '/admin-store-management': (context) =>
-              AdminStoreManagementPlaceholder(),
+          '/admin-dashboard': (context) => AdminDashboardScreen(),
+          '/admin-user-management': (context) => UserManagementScreen(),
+          '/admin-store-management': (context) => StoreManagementScreen(),
           '/admin-delivery-zone-management': (context) =>
-              AdminDeliveryZoneManagementPlaceholder(),
+              DeliveryZoneManagementScreen(),
         },
 
         // Manejo de rutas no encontradas - TEMA OSCURO

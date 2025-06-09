@@ -14,18 +14,19 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  void _initalizeAuthState() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
-    print(success);
-  }
+  // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
+  // void _initalizeAuthState() async {
+  //   final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  //   final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
+  //   print(success);
+  // }
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    _initalizeAuthState();
-    // _checkAuthStatus();
+    // _initalizeAuthState();
+    _checkAuthStatus();
   }
 
   void _setupAnimations() {
@@ -114,38 +115,35 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo container con sombra
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.darkWithOpacity(0.3),
-                              blurRadius: 15,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.restaurant,
-                          size: 60,
-                          color: AppColors.primary,
-                        ),
+                      // --- CAMBIO AQUÍ ---
+                      // Se elimina el Container y el Padding.
+                      // Se coloca el logo directamente con un tamaño definido.
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width:
+                            250, // Un poco más grande para que sea el foco principal
+                        height: 250,
                       ),
 
+                      // --- FIN DEL CAMBIO ---
                       SizedBox(height: 32),
 
                       // Título principal
                       Text(
-                        'Campus Eats',
+                        'UBERecus Eat',
                         style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           letterSpacing: 1.2,
+                          // Consejo: Añadir una sombra al texto puede darle profundidad
+                          shadows: [
+                            Shadow(
+                              blurRadius: 10.0,
+                              color: Colors.black.withOpacity(0.3),
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
                       ),
 

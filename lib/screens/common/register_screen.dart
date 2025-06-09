@@ -190,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Únete a Campus Eats',
+          'Únete a UBERecus Eats',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -512,7 +512,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: TextDecoration.underline,
                         ),
                       ),
-                      TextSpan(text: ' de uso de Campus Eats'),
+                      TextSpan(text: ' de uso de UBERecus Eats'),
                     ],
                   ),
                 ),

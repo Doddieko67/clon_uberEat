@@ -8,7 +8,7 @@ class ColorDemoScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Campus Eats - Nueva Paleta'),
+        title: Text('UBERecus Eats - Nueva Paleta'),
         backgroundColor: AppColors.dark,
         foregroundColor: AppColors.textPrimary,
       ),
