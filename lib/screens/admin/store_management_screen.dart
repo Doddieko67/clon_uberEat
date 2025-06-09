@@ -577,26 +577,13 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
         icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
       ),
       title: Text(
-        'Gestión de Tiendas',
+        'Tiendas',
         style: TextStyle(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () => _showCategoriesManagement(),
-          icon: Icon(Icons.category, color: AppColors.textSecondary),
-          tooltip: 'Gestionar categorías',
-        ),
-        IconButton(
-          onPressed: () {
-            setState(() {
-              // Refresh data
-            });
-          },
-          icon: Icon(Icons.refresh, color: AppColors.textSecondary),
-        ),
         PopupMenuButton<String>(
           icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
           onSelected: (value) {
@@ -818,9 +805,9 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
                   value: _selectedFilter,
                   style: TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
-                    labelText: 'Filtrar por rendimiento',
+                    labelText: 'Rendimiento',
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
+                      horizontal: 12,
                       vertical: 8,
                     ),
                     filled: true,
@@ -834,11 +821,11 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
                     DropdownMenuItem(value: 'all', child: Text('Todas')),
                     DropdownMenuItem(
                       value: 'high_performance',
-                      child: Text('Alto rendimiento'),
+                      child: Text('Alto'),
                     ),
                     DropdownMenuItem(
                       value: 'low_performance',
-                      child: Text('Bajo rendimiento'),
+                      child: Text('Bajo'),
                     ),
                     DropdownMenuItem(
                       value: 'issues',
@@ -1072,7 +1059,8 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
                           ),
                         ),
                         SizedBox(height: 4),
-                        Row(
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Container(
                               padding: EdgeInsets.symmetric(
@@ -1092,7 +1080,7 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
                                 ),
                               ),
                             ),
-                            SizedBox(width: 8),
+                            SizedBox(height: 8),
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -1112,7 +1100,7 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
                               ),
                             ),
                             if (store['issuesCount'] > 0) ...[
-                              SizedBox(width: 8),
+                              SizedBox(height: 8),
                               Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 6,
@@ -1368,21 +1356,6 @@ class _StoreManagementScreenState extends State<StoreManagementScreen>
     return Row(
       children: [
         // Ver detalles
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _showStoreDetails(store),
-            icon: Icon(Icons.visibility, size: 16),
-            label: Text('Detalles'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              side: BorderSide(color: AppColors.border),
-            ),
-          ),
-        ),
-
-        SizedBox(width: 8),
-
-        // Suspender/Reactivar
         if (store['status'] == 'active')
           Expanded(
             child: OutlinedButton.icon(

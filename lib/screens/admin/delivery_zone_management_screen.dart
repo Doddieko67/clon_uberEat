@@ -1519,6 +1519,7 @@ class _DeliveryZoneManagementScreenState
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Icon(
                       Icons.schedule,
@@ -1526,20 +1527,24 @@ class _DeliveryZoneManagementScreenState
                       color: AppColors.textSecondary,
                     ),
                     SizedBox(width: 4),
-                    Text(
-                      'Última entrega: ${_formatDateTime(point['lastDelivery'])}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    Spacer(),
-                    Text(
-                      'Espera prom: ${point['averageWaitTime'].toStringAsFixed(1)}min',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
+                    Column(
+                      children: [
+                        Text(
+                          'Última entrega: ${_formatDateTime(point['lastDelivery'])}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Espera prom: ${point['averageWaitTime'].toStringAsFixed(1)}min',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -1550,18 +1555,6 @@ class _DeliveryZoneManagementScreenState
               // Botones de acción
               Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showDeliveryPointDetails(point),
-                      icon: Icon(Icons.visibility, size: 16),
-                      label: Text('Detalles'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        side: BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => _togglePointStatus(point['id']),

@@ -15,18 +15,18 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnimation;
 
   // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
-  // void _initalizeAuthState() async {
-  //   final authProvider = Provider.of<AuthProvider>(context, listen: false);
-  //   final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
-  //   print(success);
-  // }
+  void _initalizeAuthState() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
+    print(success);
+  }
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    // _initalizeAuthState();
-    _checkAuthStatus();
+    _initalizeAuthState();
+    // _checkAuthStatus();
   }
 
   void _setupAnimations() {

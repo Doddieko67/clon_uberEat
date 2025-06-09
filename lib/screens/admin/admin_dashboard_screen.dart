@@ -447,7 +447,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 });
               },
               child: Text(
-                _showAlerts ? 'Ocultar' : 'Mostrar',
+                _showAlerts ? 'Ocultar' : 'Ver',
                 style: TextStyle(color: AppColors.primary),
               ),
             ),
@@ -740,7 +740,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           itemBuilder: (context, index) {
             final key = _userStats.keys.elementAt(index);
             final stats = _userStats[key]!;
-            return _buildUserStatCard(key, stats);
+            return Expanded(child: _buildUserStatCard(key, stats));
           },
         ),
       ],

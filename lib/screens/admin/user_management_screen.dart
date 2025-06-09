@@ -494,21 +494,13 @@ class _UserManagementScreenState extends State<UserManagementScreen>
         icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
       ),
       title: Text(
-        'Gestión de Usuarios',
+        'Usuarios',
         style: TextStyle(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
       actions: [
-        IconButton(
-          onPressed: () {
-            setState(() {
-              // Refresh data
-            });
-          },
-          icon: Icon(Icons.refresh, color: AppColors.textSecondary),
-        ),
         PopupMenuButton<String>(
           icon: Icon(Icons.more_vert, color: AppColors.textSecondary),
           onSelected: (value) {
@@ -1083,14 +1075,6 @@ class _UserManagementScreenState extends State<UserManagementScreen>
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    Spacer(),
-                    Text(
-                      'Registro: ${_formatDateTime(user['registeredAt'])}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -1129,21 +1113,6 @@ class _UserManagementScreenState extends State<UserManagementScreen>
   Widget _buildUserActionButtons(Map<String, dynamic> user) {
     return Row(
       children: [
-        // Ver detalles
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _showUserDetails(user),
-            icon: Icon(Icons.visibility, size: 16),
-            label: Text('Detalles'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              side: BorderSide(color: AppColors.border),
-            ),
-          ),
-        ),
-
-        SizedBox(width: 8),
-
         // Activar/Desactivar
         if (user['status'] != 'banned' && user['status'] != 'pending')
           Expanded(
