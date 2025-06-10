@@ -1,0 +1,14 @@
+[
+  {
+    "boletaNumber": "1234567890",
+    "password": "password123"
+  },
+  {
+    "boletaNumber": "0987654321",
+    "password": "securepass"
+  },
+  {
+    "boletaNumber": "1122334455",
+    "password": "test1234"
+  }
+]
