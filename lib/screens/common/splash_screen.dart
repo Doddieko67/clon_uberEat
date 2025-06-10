@@ -25,8 +25,8 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _initalizeAuthState();
-    // _checkAuthStatus();
+    // _initalizeAuthState();
+    _checkAuthStatus();
   }
 
   void _setupAnimations() {
@@ -65,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (authProvider.isAuthenticated) {
       // Redirigir según el rol del usuario
-      _redirectBasedOnRole(authProvider.user!.role);
+      _redirectBasedOnRole(authProvider.user!.role.name);
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }

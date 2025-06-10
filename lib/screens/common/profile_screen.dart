@@ -1,3 +1,4 @@
+import 'package:clonubereat/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -11,6 +12,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController(); // Nuevo controlador para teléfono
   bool _isEditing = false;
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
@@ -22,6 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     _nameController.text = user?.name ?? '';
+    _phoneController.text = user?.phone ?? ''; // Inicializar controlador de teléfono
   }
 
   void _setupAnimations() {
@@ -38,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose(); // Dispose del controlador de teléfono
     _animationController.dispose();
     super.dispose();
   }
@@ -51,9 +55,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       _animationController.forward();
     } else {
       _animationController.reverse();
-      // Restaurar el nombre original si se cancela la edición
+      // Restaurar valores originales si se cancela la edición
       final user = Provider.of<AuthProvider>(context, listen: false).user;
       _nameController.text = user?.name ?? '';
+      _phoneController.text = user?.phone ?? '';
     }
   }
 
@@ -78,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.updateProfile(
       name: _nameController.text.trim(),
+      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(), // Agregar teléfono
     );
 
     if (success && mounted) {
@@ -421,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            authProvider.getRoleDisplayName(user.role),
+            authProvider.getRoleDisplayName(UserRole.customer.name),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -441,7 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         padding: EdgeInsets.all(20),
         child: Column(
           children: [
-            // Email
+            // Phone
             Row(
               children: [
                 Container(
@@ -451,7 +457,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    Icons.email_outlined,
+                    Icons.phone_outlined,
                     color: AppColors.primary,
                     size: 20,
                   ),
@@ -462,7 +468,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Email',
+                        'Número de teléfono',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -470,23 +476,56 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                       ),
                       SizedBox(height: 4),
-                      Text(
-                        user.email,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textPrimary,
+                      // Mostrar campo editable cuando _isEditing es true
+                      if (_isEditing)
+                        SlideTransition(
+                          position: Tween<Offset>(
+                            begin: Offset(0, -0.5),
+                            end: Offset.zero,
+                          ).animate(_slideAnimation),
+                          child: TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'Ingresa tu número de teléfono',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                        )
+                      else
+                        Text(
+                          user.phone == "" || user.phone == null 
+                              ? "Sin número de teléfono" 
+                              : user.phone!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textSecondary,
+                            fontFamily: 'monospace',
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
+                SizedBox(width: 16),
               ],
             ),
 
             SizedBox(height: 20),
 
-            // ID de usuario
+            // Boleta number
             Row(
               children: [
                 Container(
@@ -507,7 +546,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ID de Usuario',
+                        'Número de boleta',
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -516,7 +555,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       ),
                       SizedBox(height: 4),
                       Text(
-                        user.id,
+                        user.boletaNumber,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w400,

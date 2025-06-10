@@ -10,7 +10,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _boletaNumberController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _boletaNumberController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -35,14 +35,18 @@ class _LoginScreenState extends State<LoginScreen> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
       final success = await authProvider.login(
-        _emailController.text.trim(),
+        _boletaNumberController.text.trim(),
         _passwordController.text,
       );
 
       if (success && mounted) {
-        // Redirigir según el rol
-        final role = authProvider.user!.role;
-        _redirectBasedOnRole(role);
+        if (authProvider.isNewUser) {
+          Navigator.pushReplacementNamed(context, '/register');
+        } else {
+          // Redirigir según el rol
+          final role = authProvider.user!.role;
+          _redirectBasedOnRole(role.name);
+        }
       } else if (mounted && authProvider.errorMessage != null) {
         // Mostrar error
         ScaffoldMessenger.of(context).showSnackBar(
@@ -109,25 +113,10 @@ class _LoginScreenState extends State<LoginScreen> {
               // Formulario de login
               _buildLoginForm(),
 
-              SizedBox(height: 12),
-
-              // Recordarme y olvidé contraseña
-              _buildRememberAndForgot(),
-
               SizedBox(height: 24),
 
               // Botón de login
               _buildLoginButton(),
-
-              SizedBox(height: 24),
-
-              // Divisor
-              _buildDivider(),
-
-              SizedBox(height: 24),
-
-              // Link de registro
-              _buildRegisterLink(),
 
               SizedBox(height: 20),
 
@@ -183,14 +172,14 @@ class _LoginScreenState extends State<LoginScreen> {
       key: _formKey,
       child: Column(
         children: [
-          // Campo de email
+          // Campo de boleta
           TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
+            controller: _boletaNumberController,
+            keyboardType: TextInputType.number,
             style: TextStyle(color: AppColors.textPrimary), // Texto blanco
             decoration: InputDecoration(
-              labelText: 'Email',
-              hintText: 'ejemplo@escuela.edu',
+              labelText: 'Número de boleta',
+              hintText: '20XX03XXXX',
               prefixIcon: Icon(
                 Icons.email_outlined,
                 color: AppColors.textSecondary,
@@ -201,14 +190,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Por favor ingresa tu email';
+                return 'Por favor ingresa tu número de boleta';
               }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Ingresa un email válido';
+              if (value.length != 10 || !RegExp(r'^\d+$').hasMatch(value)) {
+                return 'Por favor ingresa un número de boleta válido';
               }
-              return null;
             },
           ),
 
@@ -246,35 +232,11 @@ class _LoginScreenState extends State<LoginScreen> {
               if (value == null || value.isEmpty) {
                 return 'Por favor ingresa tu contraseña';
               }
-              if (value.length < 6) {
-                return 'La contraseña debe tener al menos 6 caracteres';
-              }
               return null;
             },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildRememberAndForgot() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // Olvidé mi contraseña
-        TextButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/forgot-password');
-          },
-          child: Text(
-            'Ay, ¿olvidaste la contraseña?',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -327,49 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: AppColors.divider)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'O',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Expanded(child: Divider(color: AppColors.divider)),
-      ],
-    );
-  }
-
-  Widget _buildRegisterLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          '¿No tienes cuenta? ',
-          style: TextStyle(color: AppColors.textSecondary),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pushNamed(context, '/register');
-          },
-          child: Text(
-            'Regístrate aquí',
-            style: TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInfoText() {
     return Container(
       padding: EdgeInsets.all(16),
@@ -383,7 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Icon(Icons.info_outline, color: AppColors.primary, size: 20),
           SizedBox(height: 8),
           Text(
-            'UBERecus Eat está disponible solo dentro del campus escolar. Asegúrate de estar conectado a la red de la escuela.',
+            'UBERecus Eat está disponible solo dentro del campus escolar. Debes ingresar tu número de boleta y contraseña que usas para entrar en SAES.',
             style: TextStyle(
               fontSize: 12,
               color: AppColors.textSecondary, // Texto claro sobre fondo oscuro

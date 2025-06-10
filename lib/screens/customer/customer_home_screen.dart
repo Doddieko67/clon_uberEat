@@ -162,7 +162,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '¡Hola ${user?.name?.split(' ')[0] ?? 'Usuario'}! 👋',
+                        '¡Hola ${user != null ? user.name.split(' ')[0] : 'Usuario'}! 👋',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -179,7 +179,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           ),
                           SizedBox(width: 4),
                           Text(
-                            'Campus Universitario',
+                            'Vocacional 3',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textSecondary,
@@ -223,7 +223,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         },
                         icon: CircleAvatar(
                           radius: 16,
-                          backgroundColor: AppColors.primary,
+                          backgroundImage: user != null && user.photoUrl != null
+                              ? NetworkImage(user.photoUrl!)
+                              : null,
                           child: Icon(
                             Icons.person,
                             color: AppColors.textOnPrimary,
@@ -367,7 +369,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   //               ),
   //               SizedBox(height: 12),
   //               Container(
-  //                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //                 padding: EdgeInsets.symmetric(
+  //                   horizontal: 12,
+  //                   vertical: 6,
+  //                 ),
   //                 decoration: BoxDecoration(
   //                   color: AppColors.textOnPrimary,
   //                   borderRadius: BorderRadius.circular(20),

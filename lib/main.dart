@@ -2,7 +2,7 @@ import 'package:clonubereat/screens/admin/admin_dashboard_screen.dart';
 import 'package:clonubereat/screens/admin/delivery_zone_management_screen.dart';
 import 'package:clonubereat/screens/admin/store_management_screen.dart';
 import 'package:clonubereat/screens/admin/user_management_screen.dart';
-import 'package:clonubereat/screens/common/forgot_password_screen.dart';
+// import 'package:clonubereat/screens/common/forgot_password_screen.dart';
 import 'package:clonubereat/screens/common/login_screen.dart';
 import 'package:clonubereat/screens/common/profile_screen.dart';
 import 'package:clonubereat/screens/common/register_screen.dart';
@@ -64,14 +64,14 @@ class CampusEatsApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/admin-dashboard',
+        initialRoute: '/customer-home',
 
         // Configuración de rutas
         routes: {
           '/': (context) => SplashScreen(),
           '/login': (context) => LoginScreen(),
           '/register': (context) => RegisterScreen(),
-          '/forgot-password': (context) => ForgotPasswordScreen(),
+          //'/forgot-password': (context) => ForgotPasswordScreen(),
           '/profile': (context) => ProfileScreen(),
 
           // Rutas para Cliente
