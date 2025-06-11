@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {  // CAMBIO
+  const LoginScreen({Key? key}) : super(key: key);  // CAMBIO
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();  // CAMBIO
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _boletaNumberController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -17,9 +18,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    // Limpiar errores previos cuando se entra a la pantalla
+    // CAMBIO: usar WidgetsBinding con ref
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).clearError();
+      ref.read(authNotifierProvider.notifier).clearError();
     });
   }
 
@@ -32,41 +33,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      // CAMBIO: usar ref.read en lugar de Provider.of
+      final authNotifier = ref.read(authNotifierProvider.notifier);
 
-      final success = await authProvider.login(
+      final success = await authNotifier.login(
         _boletaNumberController.text.trim(),
         _passwordController.text,
       );
 
       if (success && mounted) {
-        if (authProvider.isNewUser) {
+        // CAMBIO: usar ref.read para obtener estado
+        final authState = ref.read(authNotifierProvider);
+        
+        if (authState.isNewUser) {
           Navigator.pushReplacementNamed(context, '/register');
         } else {
-          // Redirigir según el rol
-          final role = authProvider.user!.role;
+          final role = authState.user!.role;
           _redirectBasedOnRole(role.name);
         }
-      } else if (mounted && authProvider.errorMessage != null) {
-        // Mostrar error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: AppColors.textPrimary),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    authProvider.errorMessage!,
-                    style: TextStyle(color: AppColors.textPrimary),
+      } else if (mounted) {
+        // CAMBIO: usar ref.read para obtener error
+        final errorMessage = ref.read(authNotifierProvider).errorMessage;
+        if (errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.error_outline, color: AppColors.textPrimary),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      errorMessage,
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -96,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // Fondo oscuro
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(24),
@@ -104,23 +111,12 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(height: 40),
-
-              // Logo y encabezado
               _buildHeader(),
-
               SizedBox(height: 40),
-
-              // Formulario de login
               _buildLoginForm(),
-
               SizedBox(height: 24),
-
-              // Botón de login
               _buildLoginButton(),
-
               SizedBox(height: 20),
-
-              // Información adicional
               _buildInfoText(),
             ],
           ),
@@ -132,34 +128,28 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // --- INICIO DEL CAMBIO ---
-        // Logo desde assets en lugar del icono
         Container(
           margin: EdgeInsets.only(bottom: 24),
           child: Image.asset(
-            'assets/images/logo.png', // Ruta a tu logo
-            width: 220, // Ajusta el tamaño según tu logo
+            'assets/images/logo.png',
+            width: 220,
             height: 220,
           ),
         ),
-
-        // --- FIN DEL CAMBIO ---
         Text(
           'Bienvenido',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary, // Texto blanco
+            color: AppColors.textPrimary,
           ),
         ),
-
         SizedBox(height: 8),
-
         Text(
           'Inicia sesión en tu cuenta de UBERecus Eat',
           style: TextStyle(
             fontSize: 16,
-            color: AppColors.textSecondary, // Texto secundario claro
+            color: AppColors.textSecondary,
           ),
           textAlign: TextAlign.center,
         ),
@@ -172,11 +162,10 @@ class _LoginScreenState extends State<LoginScreen> {
       key: _formKey,
       child: Column(
         children: [
-          // Campo de boleta
           TextFormField(
             controller: _boletaNumberController,
             keyboardType: TextInputType.number,
-            style: TextStyle(color: AppColors.textPrimary), // Texto blanco
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               labelText: 'Número de boleta',
               hintText: '20XX03XXXX',
@@ -186,7 +175,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               labelStyle: TextStyle(color: AppColors.textSecondary),
               hintStyle: TextStyle(color: AppColors.textTertiary),
-              // El tema ya maneja el resto de estilos oscuros
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
@@ -195,16 +183,14 @@ class _LoginScreenState extends State<LoginScreen> {
               if (value.length != 10 || !RegExp(r'^\d+$').hasMatch(value)) {
                 return 'Por favor ingresa un número de boleta válido';
               }
+              return null;
             },
           ),
-
           SizedBox(height: 16),
-
-          // Campo de contraseña
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            style: TextStyle(color: AppColors.textPrimary), // Texto blanco
+            style: TextStyle(color: AppColors.textPrimary),
             decoration: InputDecoration(
               labelText: 'Contraseña',
               hintText: 'Tu contraseña',
@@ -240,9 +226,38 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Widget _buildInfoText() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryWithOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+          SizedBox(height: 8),
+          Text(
+            'UBERecus Eat está disponible solo dentro del campus escolar. Debes ingresar tu número de boleta y contraseña que usas para entrar en SAES.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoginButton() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    // CAMBIO: Consumer de Riverpod en lugar de Provider
+    return Consumer(
+      builder: (context, ref, child) {
+        final authState = ref.watch(authNotifierProvider);  // CAMBIO: watch en lugar de read
+        
         return Container(
           width: double.infinity,
           height: 56,
@@ -258,7 +273,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: authProvider.isLoading ? null : _login,
+            onPressed: authState.isLoading ? null : _login,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
@@ -266,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: authProvider.isLoading
+            child: authState.isLoading
                 ? SizedBox(
                     height: 20,
                     width: 20,
@@ -288,30 +303,5 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
   }
-
-  Widget _buildInfoText() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant, // Fondo oscuro para el info
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryWithOpacity(0.3), width: 1),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.info_outline, color: AppColors.primary, size: 20),
-          SizedBox(height: 8),
-          Text(
-            'UBERecus Eat está disponible solo dentro del campus escolar. Debes ingresar tu número de boleta y contraseña que usas para entrar en SAES.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textSecondary, // Texto claro sobre fondo oscuro
-              height: 1.4,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+  
 }

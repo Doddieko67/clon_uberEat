@@ -1,54 +1,46 @@
-import 'package:flutter/material.dart';
+// ===============================
+// 3. AUTH NOTIFIER - Lógica de autenticación
+// ===============================
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:clonubereat/models/user_model.dart';
-
-import '../repositories/firebase_auth_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../repositories/firebase_auth_repository.dart';
+import '../models/user_model.dart';
+import 'auth_state.dart';
 
-// Provider para gestión de autenticación
-class AuthProvider with ChangeNotifier {
-  User? _user;
-  bool _isLoading = false;
-  String? _errorMessage;
+// Provider para FirebaseAuthRepository
+final firebaseAuthRepositoryProvider = Provider<FirebaseAuthRepository>((ref) {
+  return FirebaseAuthRepository();
+});
 
+// Provider principal para AuthNotifier
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final repository = ref.watch(firebaseAuthRepositoryProvider);
+  return AuthNotifier(repository);
+});
 
-  bool _isNewUser = false;
-  bool _isInitialized = false;
+class AuthNotifier extends StateNotifier<AuthState> {
+  final FirebaseAuthRepository _firebaseAuthRepository;
 
-  bool get isNewUser => _isNewUser;
-  bool get isInitialized => _isInitialized;
-
-  late final FirebaseAuthRepository _firebaseAuthRepository;
-
-  AuthProvider({FirebaseAuthRepository? firebaseAuthRepository}) {
-    _firebaseAuthRepository = firebaseAuthRepository ?? FirebaseAuthRepository();
-    _user = null;
-
-    // Listen to Firebase auth state changes to keep _user updated
+  AuthNotifier(this._firebaseAuthRepository) : super(const AuthState()) {
+    // Escuchar cambios de estado de autenticación
     _firebaseAuthRepository.authStateChanges.listen((fb_auth.User? firebaseUser) {
       _handleAuthStateChange(firebaseUser);
     });
   }
 
-  // Getters
-  User? get user => _user;
-  bool get isLoading => _isLoading;
-  bool get isAuthenticated => _user != null;
-  String? get errorMessage => _errorMessage;
-
   // Manejo centralizado de cambios de estado de autenticación
   void _handleAuthStateChange(fb_auth.User? firebaseUser) async {
-    // Solo actualizar si hay un cambio real en el usuario
     if (firebaseUser != null) {
       // Si no hay usuario local o es diferente al de Firebase
-      if (_user == null || _user!.id != firebaseUser.uid) {
-        // Si no hay usuario local o es diferente al de Firebase, intentar cargar de Firestore
-        // Esto es crucial para mantener el estado del usuario persistente
-        if (_user == null || _user!.id != firebaseUser.uid) {
-          await _loadUserDataFromFirestore(firebaseUser.uid);
-          _user ??= User(
+      if (state.user == null || state.user!.id != firebaseUser.uid) {
+        await _loadUserDataFromFirestore(firebaseUser.uid);
+        
+        // Si no se pudo cargar de Firestore, crear usuario básico
+        if (state.user == null) {
+          final newUser = User(
             id: firebaseUser.uid,
             name: firebaseUser.displayName ?? 'Usuario Firebase',
             phone: firebaseUser.phoneNumber,
@@ -57,21 +49,22 @@ class AuthProvider with ChangeNotifier {
             status: UserStatus.active,
             lastActive: DateTime.now(),
           );
-          notifyListeners();
+          
+          state = state.copyWith(user: newUser);
         }
       }
     } else {
       // Usuario deslogueado
-      if (_user != null) {
-        _user = null;
-        _isNewUser = false;
-        notifyListeners();
+      if (state.user != null) {
+        state = state.copyWith(
+          user: null,
+          isNewUser: false,
+        );
       }
     }
     
-    if (!_isInitialized) {
-      _isInitialized = true;
-      notifyListeners();
+    if (!state.isInitialized) {
+      state = state.copyWith(isInitialized: true);
     }
   }
 
@@ -88,26 +81,22 @@ class AuthProvider with ChangeNotifier {
     if (boletaNumber.contains('@')) {
       return boletaNumber;
     }
-    // Asumir dominio del campus - ajustar según tu caso
     return '$boletaNumber@ciberecus.mx';
   }
 
   // Setter para loading state
   void _setLoading(bool loading) {
-    _isLoading = loading;
-    notifyListeners();
+    state = state.copyWith(isLoading: loading);
   }
 
   // Setter para error messages
   void _setError(String? error) {
-    _errorMessage = error;
-    notifyListeners();
+    state = state.copyWith(errorMessage: error);
   }
 
   // Limpiar errores
   void clearError() {
-    _errorMessage = null;
-    notifyListeners();
+    state = state.copyWith(errorMessage: null);
   }
 
   // Método de login
@@ -135,14 +124,13 @@ class AuthProvider with ChangeNotifier {
       // 4. Intentar login en Firebase
       try {
         await _firebaseAuthRepository.signInWithEmailAndPassword(email, password);
-        _isNewUser = false; // Usuario existe en Firebase
+        state = state.copyWith(isNewUser: false);
       } on fb_auth.FirebaseAuthException catch (e) {
         if (e.code == 'user-not-found') {
           // Usuario en campus DB pero no en Firebase, registrarlo
           await _firebaseAuthRepository.registerWithEmailAndPassword(email, password);
-          _isNewUser = true; // Usuario nuevo en Firebase
+          state = state.copyWith(isNewUser: true);
         } else {
-          // Otros errores de Firebase auth
           throw Exception('Error de autenticación de Firebase: ${e.message}');
         }
       }
@@ -150,7 +138,7 @@ class AuthProvider with ChangeNotifier {
       // 5. Crear objeto User completo con datos del campus
       final fb_auth.User? firebaseUser = _firebaseAuthRepository.getCurrentUser();
       if (firebaseUser != null) {
-        _user = User(
+        final newUser = User(
           id: firebaseUser.uid,
           name: firebaseUser.displayName ?? _getNameFromBoletaNumber(boletaNumber),
           phone: firebaseUser.phoneNumber,
@@ -160,14 +148,13 @@ class AuthProvider with ChangeNotifier {
           lastActive: DateTime.now(),
         );
 
-
+        state = state.copyWith(user: newUser);
 
         // Si es usuario nuevo, actualizar perfil en Firebase y guardar en Firestore
-        if (_isNewUser) {
-          await _updateFirebaseProfile(); // Actualiza display name en Firebase Auth
-          await _saveUserDataToFirestore(); // Guarda todos los datos en Firestore
+        if (state.isNewUser) {
+          await _updateFirebaseProfile();
+          await _saveUserDataToFirestore();
         } else {
-          // Si el usuario ya existe, asegúrate de que los datos de Firestore estén cargados
           await _loadUserDataFromFirestore(firebaseUser.uid);
         }
       } else {
@@ -187,26 +174,23 @@ class AuthProvider with ChangeNotifier {
   Future<void> _updateFirebaseProfile() async {
     try {
       final fb_auth.User? firebaseUser = _firebaseAuthRepository.getCurrentUser();
-      if (firebaseUser != null && _user != null) {
-        await firebaseUser.updateDisplayName(_user!.name);
-        // Para el teléfono, idealmente guardar en Firestore
-        // await _saveUserDataToFirestore();
+      if (firebaseUser != null && state.user != null) {
+        await firebaseUser.updateDisplayName(state.user!.name);
       }
     } catch (e) {
-      // Log error but don't fail the login process
       print('Error updating Firebase profile: $e');
     }
   }
 
   // Guardar datos adicionales del usuario en Firestore
   Future<void> _saveUserDataToFirestore() async {
-    if (_user != null) {
+    if (state.user != null) {
       await FirebaseFirestore.instance
           .collection('users')
-          .doc(_user!.id)
+          .doc(state.user!.id)
           .set(
-            _user!.toMap(), // Usar el método toMap del modelo User
-            SetOptions(merge: true), // Fusionar datos existentes
+            state.user!.toMap(),
+            SetOptions(merge: true),
           );
     }
   }
@@ -218,17 +202,16 @@ class AuthProvider with ChangeNotifier {
       if (doc.exists) {
         final data = doc.data();
         if (data != null) {
-          _user = User.fromMap(data); // Usar el método fromMap del modelo User
-          notifyListeners();
+          final user = User.fromMap(data);
+          state = state.copyWith(user: user);
         }
       }
     } catch (e) {
       print('Error loading user data from Firestore: $e');
     }
   }
-  // }
 
-  // Método para completar el registro (añadir información adicional)
+  // Método para completar el registro
   Future<bool> completeRegistration(String name, String phone) async {
     try {
       _setLoading(true);
@@ -242,24 +225,16 @@ class AuthProvider with ChangeNotifier {
       // Actualizar perfil en Firebase
       await firebaseUser.updateDisplayName(name);
 
-          if (_user != null) {
-      // La forma ideal es usando un método `copyWith` en tu modelo User
-      _user = _user!.copyWith(
-        name: name, // Actualiza el nombre
-        phone: phone, // Actualiza el teléfono
-      );
-      // Si tu modelo no tiene `copyWith`, puedes hacerlo manualmente:
-      // _user!.name = name;
-      // _user!.phone = phone;
-    } else {
-        // Si _user es nulo, quizás necesites crearlo por primera vez aquí
-        // Esto depende de cómo gestiones tu estado.
-        // Ejemplo: _user = User(id: firebaseUser.uid, email: firebaseUser.email, name: name, phone: phone);
-    }
+      if (state.user != null) {
+        final updatedUser = state.user!.copyWith(
+          name: name,
+          phone: phone,
+        );
+        state = state.copyWith(user: updatedUser);
+      }
 
       await _saveUserDataToFirestore();
-
-      _isNewUser = false; // Registro completado
+      state = state.copyWith(isNewUser: false);
 
       _setLoading(false);
       return true;
@@ -278,10 +253,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     try {
       await _firebaseAuthRepository.signOut();
-      _user = null;
-      _isNewUser = false;
-      _errorMessage = null;
-      notifyListeners();
+      state = const AuthState(); // Reset completo del estado
     } catch (e) {
       _setError('Error al cerrar sesión: $e');
     }
@@ -290,22 +262,22 @@ class AuthProvider with ChangeNotifier {
   // Método para actualizar perfil
   Future<bool> updateProfile({String? name, String? phone}) async {
     try {
-      if (_user == null) return false;
+      if (state.user == null) return false;
 
       _setLoading(true);
       _setError(null);
 
       // Actualizar en Firebase
       final fb_auth.User? firebaseUser = _firebaseAuthRepository.getCurrentUser();
-      if (firebaseUser != null) {
-        if (name != null) {
-          await firebaseUser.updateDisplayName(name);
-        }
+      if (firebaseUser != null && name != null) {
+        await firebaseUser.updateDisplayName(name);
       }
-      _user = _user!.copyWith(
-      name: name,
-      phone: phone
-    );
+
+      final updatedUser = state.user!.copyWith(
+        name: name,
+        phone: phone,
+      );
+      state = state.copyWith(user: updatedUser);
 
       await _saveUserDataToFirestore();
 
@@ -318,14 +290,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Método para verificar si hay una sesión activa (para splash screen)
+  // Método para verificar si hay una sesión activa
   Future<void> checkAuthStatus() async {
     _setLoading(true);
     
-    // Esperar a que Firebase se inicialice y el listener se ejecute
     await Future.delayed(Duration(milliseconds: 500));
     
-    // Si hay usuario de Firebase pero no datos completos, intentar cargar desde Firestore
     final fb_auth.User? firebaseUser = _firebaseAuthRepository.getCurrentUser();
     if (firebaseUser != null) {
       await _loadUserDataFromFirestore(firebaseUser.uid);
@@ -334,28 +304,9 @@ class AuthProvider with ChangeNotifier {
     _setLoading(false);
   }
 
-  // Métodos auxiliares para parsing
-
-
-
-
   // Generar nombre a partir del número de boleta
   String _getNameFromBoletaNumber(String boletaNumber) {
     return 'Usuario $boletaNumber';
-  }
-
-  // Método auxiliar heredado (mejorado)
-  String _getNameFromEmail(String email) {
-    if (email.isEmpty) return 'Usuario';
-    
-    String username = email.split('@')[0];
-    return username
-        .replaceAll('.', ' ')
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isEmpty ? '' : 
-             word[0].toUpperCase() + word.substring(1).toLowerCase())
-        .join(' ');
   }
 
   // Método para cargar la base de datos simulada
@@ -387,17 +338,17 @@ class AuthProvider with ChangeNotifier {
 
   // Método para obtener el nombre del rol del usuario actual
   String getCurrentUserRoleDisplayName() {
-    if (_user == null) return 'Usuario';
-    return getRoleDisplayName(_user!.role.toString().split('.').last);
+    if (state.user == null) return 'Usuario';
+    return getRoleDisplayName(state.user!.role.toString().split('.').last);
   }
 
   // Método para verificar permisos
   bool hasPermission(String permission) {
-    if (_user == null) return false;
+    if (state.user == null) return false;
     
-    switch (_user!.role) {
+    switch (state.user!.role) {
       case UserRole.admin:
-        return true; // Admin tiene todos los permisos
+        return true;
       case UserRole.store:
         return ['manage_menu', 'view_orders', 'update_order_status'].contains(permission);
       case UserRole.deliverer:

@@ -1,35 +1,34 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';  // CAMBIO
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {  // CAMBIO: StatefulWidget -> ConsumerStatefulWidget
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();  // CAMBIO: State -> ConsumerState
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
-  void _initalizeAuthState() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
-    print(success);
-  }
-
   @override
   void initState() {
     super.initState();
     _setupAnimations();
-    // _initalizeAuthState();
     _checkAuthStatus();
   }
+  // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
+  void _initalizeAuthState() async {
+    final authProvider = ref.read(authNotifierProvider.notifier);
+    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
+    print(success);
+  }
 
-  void _setupAnimations() {
+ void _setupAnimations() {
     _animationController = AnimationController(
       duration: Duration(seconds: 2),
       vsync: this,
@@ -53,19 +52,20 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _checkAuthStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // CAMBIO: usar ref.read en lugar de Provider.of
 
-    // Verificar estado de autenticación
-    await authProvider.checkAuthStatus();
-
-    // Esperar a que termine la animación
     await Future.delayed(Duration(seconds: 3));
+
+    await ref.read(authNotifierProvider.notifier).checkAuthStatus();
 
     if (!mounted) return;
 
-    if (authProvider.isAuthenticated) {
-      // Redirigir según el rol del usuario
-      _redirectBasedOnRole(authProvider.user!.role.name);
+    // CAMBIO: usar ref.read para obtener el estado
+    final authState = ref.read(authNotifierProvider);
+    print("Tratando de iniciar sesión $authState");
+    
+    if (authState.isAuthenticated) {
+      _redirectBasedOnRole(authState.user!.role.name);
     } else {
       Navigator.pushReplacementNamed(context, '/login');
     }
@@ -92,14 +92,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     Navigator.pushReplacementNamed(context, route);
   }
-
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -115,20 +114,12 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // --- CAMBIO AQUÍ ---
-                      // Se elimina el Container y el Padding.
-                      // Se coloca el logo directamente con un tamaño definido.
                       Image.asset(
                         'assets/images/logo.png',
-                        width:
-                            250, // Un poco más grande para que sea el foco principal
+                        width: 250,
                         height: 250,
                       ),
-
-                      // --- FIN DEL CAMBIO ---
                       SizedBox(height: 32),
-
-                      // Título principal
                       Text(
                         'UBERecus Eat',
                         style: TextStyle(
@@ -136,7 +127,6 @@ class _SplashScreenState extends State<SplashScreen>
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           letterSpacing: 1.2,
-                          // Consejo: Añadir una sombra al texto puede darle profundidad
                           shadows: [
                             Shadow(
                               blurRadius: 10.0,
@@ -146,10 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                           ],
                         ),
                       ),
-
                       SizedBox(height: 8),
-
-                      // Subtítulo
                       Text(
                         'Comida escolar a tu alcance',
                         style: TextStyle(
@@ -158,23 +145,16 @@ class _SplashScreenState extends State<SplashScreen>
                           fontWeight: FontWeight.w300,
                         ),
                       ),
-
                       SizedBox(height: 60),
-
-                      // Indicador de carga
                       SizedBox(
                         width: 40,
                         height: 40,
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           strokeWidth: 3,
                         ),
                       ),
-
                       SizedBox(height: 16),
-
                       Text(
                         'Cargando...',
                         style: TextStyle(fontSize: 14, color: Colors.white70),

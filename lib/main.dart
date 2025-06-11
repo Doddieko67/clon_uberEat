@@ -1,7 +1,7 @@
 import 'package:clonubereat/screens/admin/admin_dashboard_screen.dart';
-import 'package:clonubereat/screens/admin/delivery_zone_management_screen.dart';
-import 'package:clonubereat/screens/admin/store_management_screen.dart';
-import 'package:clonubereat/screens/admin/user_management_screen.dart';
+// import 'package:clonubereat/screens/admin/delivery_zone_management_screen.dart';
+// import 'package:clonubereat/screens/admin/store_management_screen.dart';
+// import 'package:clonubereat/screens/admin/user_management_screen.dart';
 // import 'package:clonubereat/screens/common/forgot_password_screen.dart';
 import 'package:clonubereat/screens/common/login_screen.dart';
 import 'package:clonubereat/screens/common/profile_screen.dart';
@@ -13,19 +13,20 @@ import 'package:clonubereat/screens/customer/customer_home_screen.dart';
 import 'package:clonubereat/screens/customer/order_history_screen.dart';
 import 'package:clonubereat/screens/customer/order_tracking_screen.dart';
 import 'package:clonubereat/screens/customer/store_detail_screen.dart';
-import 'package:clonubereat/screens/deliverer/deliverer_dashboard_screen.dart';
-import 'package:clonubereat/screens/deliverer/delivery_details_screen.dart';
-import 'package:clonubereat/screens/deliverer/delivery_history_screen.dart';
+// import 'package:clonubereat/screens/deliverer/deliverer_dashboard_screen.dart';
+// import 'package:clonubereat/screens/deliverer/delivery_details_screen.dart';
+// import 'package:clonubereat/screens/deliverer/delivery_history_screen.dart';
 import 'package:clonubereat/screens/store/menu_management_screen.dart';
 import 'package:clonubereat/screens/store/order_management_screen.dart';
 import 'package:clonubereat/screens/store/store_dashboard_screen.dart';
 import 'package:clonubereat/screens/store/store_profile_settings_screen.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:provider/provider.dart';
 
 // Importa el provider de autenticación y el theme
-import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
 
 // Importa las pantallas específicas por rol (cuando las tengas)
@@ -40,23 +41,13 @@ void main() async {
 
   // Aquí inicializarías Firebase cuando lo agregues:
   await Firebase.initializeApp();
-  runApp(CampusEatsApp());
+  runApp(ProviderScope(child: CampusEatsApp()));
 }
 
 class CampusEatsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        // Provider para la autenticación
-        ChangeNotifierProvider(create: (context) => AuthProvider()),
-
-        // Aquí puedes agregar más providers según necesites:
-        // ChangeNotifierProvider(create: (context) => CartProvider()),
-        // ChangeNotifierProvider(create: (context) => OrderProvider()),
-        // ChangeNotifierProvider(create: (context) => StoreProvider()),
-      ],
-      child: MaterialApp(
+    return MaterialApp(
         title: 'UBERecus Eat',
         debugShowCheckedModeBanner: false,
 
@@ -89,18 +80,18 @@ class CampusEatsApp extends StatelessWidget {
           '/store-profile-settings': (context) => StoreProfileSettingsScreen(),
 
           // Rutas para Repartidor
-          '/deliverer-dashboard': (context) => DelivererDashboardScreen(),
-          '/deliverer-delivery-details': (context) => DeliveryDetailsScreen(),
-          '/deliverer-customer-location': (context) =>
-              DelivererCustomerLocationPlaceholder(),
-          '/deliverer-history': (context) => DeliveryHistoryScreen(),
+          // '/deliverer-dashboard': (context) => DelivererDashboardScreen(),
+          // '/deliverer-delivery-details': (context) => DeliveryDetailsScreen(),
+          // '/deliverer-customer-location': (context) =>
+          //     DelivererCustomerLocationPlaceholder(),
+          // '/deliverer-history': (context) => DeliveryHistoryScreen(),
 
-          // Rutas para Admin
-          '/admin-dashboard': (context) => AdminDashboardScreen(),
-          '/admin-user-management': (context) => UserManagementScreen(),
-          '/admin-store-management': (context) => StoreManagementScreen(),
-          '/admin-delivery-zone-management': (context) =>
-              DeliveryZoneManagementScreen(),
+          // // Rutas para Admin
+          // '/admin-dashboard': (context) => AdminDashboardScreen(),
+          // '/admin-user-management': (context) => UserManagementScreen(),
+          // '/admin-store-management': (context) => StoreManagementScreen(),
+          // '/admin-delivery-zone-management': (context) =>
+          //     DeliveryZoneManagementScreen(),
         },
 
         // Manejo de rutas no encontradas - TEMA OSCURO
@@ -154,9 +145,8 @@ class CampusEatsApp extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
+      );
+   }
 }
 
 // PANTALLAS PLACEHOLDER TEMPORALES CON TEMA OSCURO

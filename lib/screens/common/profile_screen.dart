@@ -1,18 +1,21 @@
+// ===============================
+// PROFILE SCREEN - Migrado a Riverpod
+// ===============================
 import 'package:clonubereat/models/user_model.dart';
+import 'package:clonubereat/providers/auth_provider.dart';
+import 'package:clonubereat/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController(); // Nuevo controlador para teléfono
+  final _phoneController = TextEditingController();
   bool _isEditing = false;
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
@@ -22,9 +25,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     _setupAnimations();
 
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    _nameController.text = user?.name ?? '';
-    _phoneController.text = user?.phone ?? ''; // Inicializar controlador de teléfono
+    // CAMBIO: usar ref.read en lugar de Provider.of
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authNotifierProvider).user;
+      _nameController.text = user?.name ?? '';
+      _phoneController.text = user?.phone ?? '';
+    });
   }
 
   void _setupAnimations() {
@@ -41,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose(); // Dispose del controlador de teléfono
+    _phoneController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -56,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     } else {
       _animationController.reverse();
       // Restaurar valores originales si se cancela la edición
-      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      final user = ref.read(authNotifierProvider).user;
       _nameController.text = user?.name ?? '';
       _phoneController.text = user?.phone ?? '';
     }
@@ -80,10 +86,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       return;
     }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final success = await authProvider.updateProfile(
+    // CAMBIO: usar ref.read para acceder al notifier
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final success = await authNotifier.updateProfile(
       name: _nameController.text.trim(),
-      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(), // Agregar teléfono
+      phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
     );
 
     if (success && mounted) {
@@ -105,20 +112,23 @@ class _ProfileScreenState extends State<ProfileScreen>
           behavior: SnackBarBehavior.floating,
         ),
       );
-    } else if (mounted && authProvider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(child: Text(authProvider.errorMessage!)),
-            ],
+    } else if (mounted) {
+      final errorMessage = ref.read(authNotifierProvider).errorMessage;
+      if (errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text(errorMessage)),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -146,7 +156,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Provider.of<AuthProvider>(context, listen: false).logout();
+              // CAMBIO: usar ref.read para logout
+              ref.read(authNotifierProvider.notifier).logout();
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 '/login',
@@ -162,66 +173,6 @@ class _ProfileScreenState extends State<ProfileScreen>
             child: Text('Cerrar sesión', style: TextStyle(color: Colors.white)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _changeProfilePicture() {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Cambiar foto de perfil',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            SizedBox(height: 20),
-            ListTile(
-              leading: Icon(Icons.camera_alt, color: AppColors.primary),
-              title: Text('Tomar foto'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Funcionalidad de cámara próximamente'),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library, color: AppColors.primary),
-              title: Text('Seleccionar de galería'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Funcionalidad de galería próximamente'),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete, color: Colors.red),
-              title: Text('Eliminar foto actual'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Foto eliminada')));
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -253,9 +204,11 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
         ],
       ),
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          final user = authProvider.user;
+      // CAMBIO: Consumer de Riverpod
+      body: Consumer(
+        builder: (context, ref, child) {
+          final authState = ref.watch(authNotifierProvider);
+          final user = authState.user;
 
           if (user == null) {
             return Center(
@@ -295,22 +248,12 @@ class _ProfileScreenState extends State<ProfileScreen>
             padding: EdgeInsets.all(24),
             child: Column(
               children: [
-                // Avatar y información básica
                 _buildProfileHeader(user),
-
                 SizedBox(height: 32),
-
-                // Información del usuario
                 _buildUserInfoCard(user),
-
                 SizedBox(height: 24),
-
-                // Opciones adicionales
                 _buildAdditionalOptions(),
-
                 SizedBox(height: 32),
-
-                // Botón de cerrar sesión
                 _buildLogoutButton(),
               ],
             ),
@@ -321,7 +264,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileHeader(User user) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // CAMBIO: usar ref.read para acceder al notifier
+    final authNotifier = ref.read(authNotifierProvider.notifier);
 
     return Column(
       children: [
@@ -359,8 +303,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     )
                   : Icon(Icons.person, size: 60, color: Colors.white),
             ),
-
-            // Botón para cambiar foto
             Positioned(
               bottom: 0,
               right: 0,
@@ -371,7 +313,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   border: Border.all(color: Colors.white, width: 3),
                 ),
                 child: IconButton(
-                  onPressed: _changeProfilePicture,
+                  onPressed: () {
+                    // Cambiar foto placeholder
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Funcionalidad próximamente')),
+                    );
+                  },
                   icon: Icon(Icons.camera_alt, color: Colors.white, size: 20),
                   constraints: BoxConstraints(minWidth: 40, minHeight: 40),
                 ),
@@ -427,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            authProvider.getRoleDisplayName(UserRole.customer.name),
+            authNotifier.getRoleDisplayName(UserRole.customer.name),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -476,7 +423,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ),
                       ),
                       SizedBox(height: 4),
-                      // Mostrar campo editable cuando _isEditing es true
                       if (_isEditing)
                         SlideTransition(
                           position: Tween<Offset>(
@@ -581,24 +527,17 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: Column(
         children: [
           ListTile(
-            leading: Icon(
-              Icons.notifications_outlined,
-              color: AppColors.primary,
-            ),
+            leading: Icon(Icons.notifications_outlined, color: AppColors.primary),
             title: Text('Notificaciones'),
             subtitle: Text('Configurar notificaciones push'),
             trailing: Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Configuración de notificaciones próximamente'),
-                ),
+                SnackBar(content: Text('Configuración de notificaciones próximamente')),
               );
             },
           ),
-
           Divider(height: 1),
-
           ListTile(
             leading: Icon(Icons.location_on_outlined, color: AppColors.primary),
             title: Text('Ubicaciones favoritas'),
@@ -610,9 +549,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               );
             },
           ),
-
           Divider(height: 1),
-
           ListTile(
             leading: Icon(Icons.help_outline, color: AppColors.primary),
             title: Text('Ayuda y soporte'),

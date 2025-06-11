@@ -1,15 +1,18 @@
+// ===============================
+// REGISTER SCREEN - Migrado a Riverpod
+// ===============================
+import 'package:clonubereat/providers/auth_provider.dart';
+import 'package:clonubereat/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_model.dart'; // Added for UserRole
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -17,9 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // Limpiar errores previos cuando se entra a la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AuthProvider>(context, listen: false).clearError();
+      ref.read(authNotifierProvider.notifier).clearError();
     });
   }
 
@@ -32,15 +34,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _completeRegistration() async {
     if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final authNotifier = ref.read(authNotifierProvider.notifier);
 
-      final success = await authProvider.completeRegistration(
+      final success = await authNotifier.completeRegistration(
         _nameController.text.trim(),
         _phoneController.text.trim(),
       );
 
       if (success && mounted) {
-        // Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -60,12 +61,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
 
-        // Navegar a la pantalla principal después de un breve delay
         await Future.delayed(Duration(seconds: 1));
         if (mounted) {
-          // Determinar la ruta de redirección basada en el rol del usuario
+          final user = ref.read(authNotifierProvider).user;
           String? redirectRoute;
-          switch (authProvider.user?.role) {
+          switch (user?.role) {
             case UserRole.customer:
               redirectRoute = '/customer-home';
               break;
@@ -79,31 +79,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
               redirectRoute = '/admin-dashboard';
               break;
             default:
-              redirectRoute = '/login'; // Fallback
+              redirectRoute = '/login';
               break;
           }
           Navigator.pushReplacementNamed(context, redirectRoute);
         }
-      } else if (mounted && authProvider.errorMessage != null) {
-        // Mostrar error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: AppColors.textPrimary),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    authProvider.errorMessage!,
-                    style: TextStyle(color: AppColors.textPrimary),
+      } else if (mounted) {
+        final errorMessage = ref.read(authNotifierProvider).errorMessage;
+        if (errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.error_outline, color: AppColors.textPrimary),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      errorMessage,
+                      style: TextStyle(color: AppColors.textPrimary),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
       }
     }
   }
@@ -111,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background, // Fondo oscuro
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
@@ -203,7 +205,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               if (value == null || value.isEmpty) {
                 return 'Por favor ingresa tu número de teléfono';
               }
-              // Puedes añadir validación de formato de teléfono aquí si es necesario
               return null;
             },
           ),
@@ -213,8 +214,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildRegisterButton() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final authState = ref.watch(authNotifierProvider);
+        
         return Container(
           width: double.infinity,
           height: 56,
@@ -230,7 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ],
           ),
           child: ElevatedButton(
-            onPressed: authProvider.isLoading ? null : _completeRegistration,
+            onPressed: authState.isLoading ? null : _completeRegistration,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
@@ -238,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: authProvider.isLoading
+            child: authState.isLoading
                 ? SizedBox(
                     height: 20,
                     width: 20,
@@ -260,6 +263,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
       },
     );
   }
-
-
 }

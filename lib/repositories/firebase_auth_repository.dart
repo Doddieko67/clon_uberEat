@@ -36,6 +36,18 @@ class FirebaseAuthRepository {
     }
   }
 
+  // Sign in with a custom token
+  Future<UserCredential> signInWithCustomToken(String token) async {
+    try {
+      final userCredential = await _firebaseAuth.signInWithCustomToken(token);
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      throw e;
+    } catch (e) {
+      throw Exception('Failed to sign in with custom token: $e');
+    }
+  }
+
   // Sign out the current user
   Future<void> signOut() async {
     await _firebaseAuth.signOut();

@@ -1,14 +1,18 @@
+import 'package:clonubereat/providers/auth_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CustomerHomeScreen extends StatefulWidget {
+class CustomerHomeScreen extends ConsumerStatefulWidget {
+  const CustomerHomeScreen({Key? key}) : super(key: key);
+
   @override
   _CustomerHomeScreenState createState() => _CustomerHomeScreenState();
 }
 
-class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
+class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   final _searchController = TextEditingController();
   String _selectedCategory = 'Todos';
   int _currentIndex = 0;
@@ -140,10 +144,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   Widget _buildHeader() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        final user = authProvider.user;
-        return Container(
+    final user = ref.watch(authNotifierProvider).user;
+    return Container(
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -240,9 +242,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ],
           ),
         );
-      },
-    );
-  }
+      } 
 
   Widget _buildSearchBar() {
     return Padding(
