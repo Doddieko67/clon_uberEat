@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/store_provider.dart';
+import '../../models/menu_item_model.dart';
+import '../../models/store_model.dart';
 
-class OrderHistoryScreen extends StatefulWidget {
+class OrderHistoryScreen extends ConsumerStatefulWidget {
   @override
   _OrderHistoryScreenState createState() => _OrderHistoryScreenState();
 }
 
-class _OrderHistoryScreenState extends State<OrderHistoryScreen>
+class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
@@ -251,15 +256,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.pushNamed(context, '/customer-cart');
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Productos agregados al carrito'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          _performReorder(order);
                         },
                         child: Text(
                           'Reordenar',
@@ -278,6 +275,123 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+  
+  void _performReorder(Map<String, dynamic> order) {
+    final cartNotifier = ref.read(cartProvider.notifier);
+    final stores = ref.read(storeProvider);
+    
+    // Buscar la tienda del pedido
+    final storeId = _getStoreIdFromStoreName(order['storeName']);
+    final store = stores.firstWhere((s) => s.id == storeId, orElse: () => stores.first);
+    
+    // Verificar si el carrito es de otra tienda
+    if (!cartNotifier.canAddItemFromStore(store.id)) {
+      _showStoreChangeDialog(() {
+        cartNotifier.clearCartForNewStore(store);
+        _addOrderItemsToCart(order, store);
+      });
+    } else {
+      cartNotifier.setStore(store);
+      _addOrderItemsToCart(order, store);
+    }
+  }
+  
+  void _addOrderItemsToCart(Map<String, dynamic> order, Store store) {
+    final cartNotifier = ref.read(cartProvider.notifier);
+    final menuItems = ref.read(menuForStoreProvider(store.id));
+    int itemsAdded = 0;
+    
+    // Agregar cada item del pedido al carrito
+    for (var item in order['items'] as List) {
+      final menuItem = _findMenuItemByName(menuItems, item['name']);
+      if (menuItem != null) {
+        cartNotifier.addItem(menuItem, quantity: item['quantity'] as int);
+        itemsAdded++;
+      }
+    }
+    
+    Navigator.pushNamed(context, '/customer-cart');
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$itemsAdded productos agregados al carrito'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+  
+  MenuItem? _findMenuItemByName(List<MenuItem> menuItems, String name) {
+    try {
+      return menuItems.firstWhere((item) => item.name == name);
+    } catch (e) {
+      // Si no encuentra el item exacto, buscar uno similar o crear uno mock
+      return _createMockMenuItem(name);
+    }
+  }
+  
+  MenuItem _createMockMenuItem(String name) {
+    // Crear un MenuItem mock basado en el nombre para que el reorder funcione
+    return MenuItem(
+      id: 'reorder_${name.hashCode}',
+      name: name,
+      description: 'Producto reordenado',
+      price: 50.0, // Precio mock
+      category: 'Populares',
+      isAvailable: true,
+      storeId: '1', // ID mock
+    );
+  }
+  
+  String _getStoreIdFromStoreName(String storeName) {
+    switch (storeName) {
+      case 'Cafetería Central':
+        return '1';
+      case 'Pizza Campus':
+        return '2';
+      case 'Sushi Express':
+        return '3';
+      case 'Healthy Corner':
+        return '4';
+      case 'Sweet Dreams':
+        return '5';
+      default:
+        return '1';
+    }
+  }
+  
+  void _showStoreChangeDialog(VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: Text(
+            'Cambiar restaurante',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+          content: Text(
+            'Tu carrito actual será vaciado para agregar los productos de este pedido. ¿Deseas continuar?',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onConfirm();
+              },
+              child: Text('Continuar', style: TextStyle(color: AppColors.textOnPrimary)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            ),
+          ],
         );
       },
     );

@@ -15,8 +15,8 @@ class StoreNotifier extends StateNotifier<List<Store>> {
     final mockStores = [
       Store(
         id: '1',
-        name: 'Cafetería Central',
-        storeName: 'Cafetería Central',
+        name: 'Cafeterï¿½a Central',
+        storeName: 'Cafeterï¿½a Central',
         address: 'Edificio Central, Planta Baja',
         category: 'Mexicana',
         rating: 4.8,
@@ -35,7 +35,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
           saturday: TimeRange(open: '08:00', close: '20:00'),
           sunday: TimeRange(open: '08:00', close: '20:00'),
         ),
-        description: 'Comida tradicional mexicana con ingredientes frescos del día',
+        description: 'Comida tradicional mexicana con ingredientes frescos del dï¿½a',
         specialOffer: '2x1 en tacos los martes',
         hasSpecialOffer: true,
       ),
@@ -43,7 +43,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
         id: '2',
         name: 'Pizza Campus',
         storeName: 'Pizza Campus',
-        address: 'Cafetería Ingeniería, 2do piso',
+        address: 'Cafeterï¿½a Ingenierï¿½a, 2do piso',
         category: 'Italiana',
         rating: 4.6,
         reviewCount: 189,
@@ -68,7 +68,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
         name: 'Sushi Sakura',
         storeName: 'Sushi Sakura',
         address: 'Centro Comercial Campus',
-        category: 'Asiática',
+        category: 'Asiï¿½tica',
         rating: 4.9,
         reviewCount: 156,
         deliveryFee: 35.0,
@@ -85,7 +85,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
           saturday: TimeRange(open: '12:00', close: '23:00'),
           sunday: TimeRange(open: '12:00', close: '21:00'),
         ),
-        description: 'Sushi fresco y auténtica comida japonesa',
+        description: 'Sushi fresco y autï¿½ntica comida japonesa',
         specialOffer: 'Descuento 15% en rollos especiales',
         hasSpecialOffer: true,
       ),
@@ -115,8 +115,8 @@ class StoreNotifier extends StateNotifier<List<Store>> {
       ),
       Store(
         id: '5',
-        name: 'Dulce Tentación',
-        storeName: 'Dulce Tentación',
+        name: 'Dulce Tentaciï¿½n',
+        storeName: 'Dulce Tentaciï¿½n',
         address: 'Biblioteca Central, entrada',
         category: 'Postres',
         rating: 4.7,
@@ -135,7 +135,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
           saturday: TimeRange(open: '10:00', close: '17:00'),
           sunday: TimeRange(open: '10:00', close: '17:00'),
         ),
-        description: 'Postres artesanales, pasteles y café gourmet',
+        description: 'Postres artesanales, pasteles y cafï¿½ gourmet',
       ),
       Store(
         id: '6',
@@ -202,19 +202,19 @@ class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
   }
 
   void _loadMockMenuItems() {
-    // Datos mock del menú usando modelos tipados
+    // Datos mock del menï¿½ usando modelos tipados
     final mockMenuItems = {
-      '1': [ // Cafetería Central
+      '1': [ // Cafeterï¿½a Central
         // Populares
         MenuItem(
           id: 'pop1',
           storeId: '1',
           name: 'Tacos de Pastor',
-          description: 'Deliciosos tacos al pastor con piña, cebolla y cilantro',
+          description: 'Deliciosos tacos al pastor con piï¿½a, cebolla y cilantro',
           price: 45.0,
           category: 'Populares',
           isAvailable: true,
-          ingredients: ['Carne de cerdo', 'Piña', 'Cebolla', 'Cilantro', 'Tortilla'],
+          ingredients: ['Carne de cerdo', 'Piï¿½a', 'Cebolla', 'Cilantro', 'Tortilla'],
           calories: 280,
           preparationTime: 15,
           isPopular: true,
@@ -238,7 +238,7 @@ class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
           id: 'taco1',
           storeId: '1',
           name: 'Tacos de Carnitas',
-          description: 'Tacos de carnitas estilo Michoacán',
+          description: 'Tacos de carnitas estilo Michoacï¿½n',
           price: 40.0,
           category: 'Tacos',
           isAvailable: true,
@@ -262,12 +262,12 @@ class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
         MenuItem(
           id: 'ques1',
           storeId: '1',
-          name: 'Quesadilla de Champiñones',
-          description: 'Con champiñones frescos y queso derretido',
+          name: 'Quesadilla de Champiï¿½ones',
+          description: 'Con champiï¿½ones frescos y queso derretido',
           price: 50.0,
           category: 'Quesadillas',
           isAvailable: true,
-          ingredients: ['Champiñones', 'Queso', 'Tortilla'],
+          ingredients: ['Champiï¿½ones', 'Queso', 'Tortilla'],
           calories: 290,
           preparationTime: 15,
         ),
@@ -280,24 +280,24 @@ class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
           price: 25.0,
           category: 'Bebidas',
           isAvailable: true,
-          ingredients: ['Arroz', 'Canela', 'Leche', 'Azúcar'],
+          ingredients: ['Arroz', 'Canela', 'Leche', 'Azï¿½car'],
           calories: 180,
           preparationTime: 5,
         ),
         MenuItem(
           id: 'beb2',
           storeId: '1',
-          name: 'Café de Olla',
-          description: 'Café tradicional con canela y piloncillo',
+          name: 'Cafï¿½ de Olla',
+          description: 'Cafï¿½ tradicional con canela y piloncillo',
           price: 20.0,
           category: 'Bebidas',
           isAvailable: true,
-          ingredients: ['Café', 'Canela', 'Piloncillo'],
+          ingredients: ['Cafï¿½', 'Canela', 'Piloncillo'],
           calories: 45,
           preparationTime: 8,
         ),
       ],
-      // Agregar menús para otras tiendas...
+      // Agregar menï¿½s para otras tiendas...
     };
 
     state = mockMenuItems;

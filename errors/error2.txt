@@ -1,0 +1,32 @@
+Launching lib/main.dart on 2201116PG in debug mode...
+Running Gradle task 'assembleDebug'...                          
+lib/providers/store_provider.dart:405:7: Error: 'storeProvider' is already declared in this scope.
+final storeProvider = StateNotifierProvider<StoreNotifier, List<Store>>((ref) {
+      ^^^^^^^^^^^^^
+lib/providers/store_provider.dart:346:7: Context: Previous declaration of 'storeProvider'.
+final storeProvider = StateNotifierProvider<StoreNotifier, List<Store>>((ref) {
+      ^^^^^^^^^^^^^
+lib/providers/store_provider.dart:356:28: Error: Can't use 'storeProvider' because it is declared more than once.
+  final stores = ref.watch(storeProvider);
+                           ^
+lib/providers/store_provider.dart:380:28: Error: Can't use 'storeProvider' because it is declared more than once.
+  final stores = ref.watch(storeProvider);
+                           ^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1s
+Running Gradle task 'assembleDebug'...                           2,053ms
+Error: Gradle task assembleDebug failed with exit code 1
