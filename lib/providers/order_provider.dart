@@ -75,6 +75,19 @@ class OrdersNotifier extends AsyncNotifier<List<Order>> {
     }
   }
 
+  // Update order rating
+  Future<void> updateOrderRating(String orderId, int rating) async {
+    state = const AsyncValue.loading();
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'rating': rating,
+      });
+      // State will be updated by the snapshot listener
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
   // Delete an order
   Future<void> deleteOrder(String orderId) async {
     state = const AsyncValue.loading();

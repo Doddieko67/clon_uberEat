@@ -12,6 +12,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
   late TabController _tabController;
   final _searchController = TextEditingController();
   String _selectedTimeFilter = 'all'; // all, today, week, month
+  bool _isStatsExpanded = false; // Collapsible stats
 
   // Datos simulados de entregas
   final List<Map<String, dynamic>> _allDeliveries = [
@@ -251,6 +252,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
       body: Column(
         children: [
           _buildStatsSection(),
+          SizedBox(height: 8),
           _buildFiltersSection(),
           _buildTabBar(),
           Expanded(child: _buildHistoryList()),
@@ -291,7 +293,6 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
     final stats = _stats;
     return Container(
       margin: EdgeInsets.all(20),
-      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -306,63 +307,90 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.analytics, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Estadísticas Generales',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isStatsExpanded = !_isStatsExpanded;
+              });
+            },
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Icon(Icons.analytics, color: AppColors.primary, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Estadísticas Generales',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _isStatsExpanded ? 0.5 : 0.0,
+                    duration: Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-          SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Entregas',
-                  '${stats['totalDeliveries']}',
-                  Icons.local_shipping,
-                  AppColors.primary,
-                ),
+          AnimatedCrossFade(
+            firstChild: SizedBox.shrink(),
+            secondChild: Padding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Entregas',
+                          '${stats['totalDeliveries']}',
+                          Icons.local_shipping,
+                          AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          'Ganancias',
+                          '\$${stats['totalEarnings'].toStringAsFixed(0)}',
+                          Icons.attach_money,
+                          AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          'Rating',
+                          '${stats['averageRating'].toStringAsFixed(1)}⭐',
+                          Icons.star,
+                          AppColors.warning,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(child: SizedBox()),
+                    ],
+                  ),
+                ],
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Ganancias',
-                  '\$${stats['totalEarnings'].toStringAsFixed(0)}',
-                  Icons.attach_money,
-                  AppColors.success,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Distancia',
-                  '${(stats['totalDistance'] / 1000).toStringAsFixed(1)}km',
-                  Icons.directions_walk,
-                  AppColors.secondary,
-                ),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Rating',
-                  '${stats['averageRating'].toStringAsFixed(1)}⭐',
-                  Icons.star,
-                  AppColors.warning,
-                ),
-              ),
-            ],
+            ),
+            crossFadeState: _isStatsExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: Duration(milliseconds: 300),
           ),
         ],
       ),
@@ -404,8 +432,13 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
   }
 
   Widget _buildFiltersSection() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      margin: EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           // Barra de búsqueda
@@ -495,7 +528,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
     };
 
     return Container(
-      margin: EdgeInsets.all(20),
+      margin: EdgeInsets.fromLTRB(20, 16, 20, 0),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -533,7 +566,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 20),
       itemCount: deliveries.length,
       itemBuilder: (context, index) {
         final delivery = deliveries[index];

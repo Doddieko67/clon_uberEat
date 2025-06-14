@@ -19,12 +19,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _checkAuthStatus();
+    // _checkAuthStatus();
   }
   // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
   void _initalizeAuthState() async {
     final authProvider = ref.read(authNotifierProvider.notifier);
-    final success = await authProvider.login("guilli@gmail.com", "mamiLenia");
+    final success = await authProvider.login("2022031111@ciberecus.mx", "123456");
     print(success);
   }
 

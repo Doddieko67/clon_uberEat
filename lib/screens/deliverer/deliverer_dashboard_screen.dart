@@ -1,17 +1,19 @@
 // screens/deliverer/deliverer_dashboard_screen.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../../providers/auth_provider.dart';
+import '../../providers/order_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../models/order_model.dart';
 
-class DelivererDashboardScreen extends StatefulWidget {
+class DelivererDashboardScreen extends ConsumerStatefulWidget {
   @override
   _DelivererDashboardScreenState createState() =>
       _DelivererDashboardScreenState();
 }
 
-class _DelivererDashboardScreenState extends State<DelivererDashboardScreen>
+class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _slideController;
@@ -222,10 +224,10 @@ class _DelivererDashboardScreenState extends State<DelivererDashboardScreen>
   }
 
   Widget _buildHeader() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        final user = authProvider.user;
-        return Container(
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState.user;
+    
+    return Container(
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -353,8 +355,6 @@ class _DelivererDashboardScreenState extends State<DelivererDashboardScreen>
             ],
           ),
         );
-      },
-    );
   }
 
   Widget _buildStatsCards() {

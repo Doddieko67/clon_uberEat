@@ -17,9 +17,11 @@ class Order {
   final List<OrderItem> items;
   final double totalAmount;
   final OrderStatus status;
-  final String deliveryAddress;
+  final String? deliveryAddress;
   final DateTime orderTime;
   final DateTime? deliveryTime;
+  final int? rating;
+  final String? specialInstructions;
 
   Order({
     required this.id,
@@ -29,9 +31,11 @@ class Order {
     required this.items,
     required this.totalAmount,
     required this.status,
-    required this.deliveryAddress,
+    this.deliveryAddress,
     required this.orderTime,
     this.deliveryTime,
+    this.rating,
+    this.specialInstructions,
   });
 
   Order copyWith({
@@ -45,6 +49,8 @@ class Order {
     String? deliveryAddress,
     DateTime? orderTime,
     DateTime? deliveryTime,
+    int? rating,
+    String? specialInstructions,
   }) {
     return Order(
       id: id ?? this.id,
@@ -57,6 +63,8 @@ class Order {
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       orderTime: orderTime ?? this.orderTime,
       deliveryTime: deliveryTime ?? this.deliveryTime,
+      rating: rating ?? this.rating,
+      specialInstructions: specialInstructions ?? this.specialInstructions,
     );
   }
 
@@ -66,12 +74,14 @@ class Order {
       'customerId': customerId,
       'storeId': storeId,
       'delivererId': delivererId,
-      'items': items,
+      'items': items.map((item) => item.toMap()).toList(),
       'totalAmount': totalAmount,
       'status': status.toString().split('.').last,
       'deliveryAddress': deliveryAddress,
       'orderTime': orderTime.toIso8601String(),
       'deliveryTime': deliveryTime?.toIso8601String(),
+      'rating': rating,
+      'specialInstructions': specialInstructions,
     };
   }
 
@@ -81,15 +91,19 @@ class Order {
       customerId: map['customerId'] as String,
       storeId: map['storeId'] as String,
       delivererId: map['delivererId'] as String?,
-      items: List<OrderItem>.from(map['items'] as List<dynamic>),
+      items: (map['items'] as List<dynamic>)
+          .map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
+          .toList(),
       totalAmount: (map['totalAmount'] as num).toDouble(),
       status: OrderStatus.values.firstWhere(
           (e) => e.toString().split('.').last == map['status'] as String),
-      deliveryAddress: map['deliveryAddress'] as String,
+      deliveryAddress: map['deliveryAddress'] as String?,
       orderTime: DateTime.parse(map['orderTime'] as String),
       deliveryTime: map['deliveryTime'] != null
           ? DateTime.parse(map['deliveryTime'] as String)
           : null,
+      rating: map['rating'] as int?,
+      specialInstructions: map['specialInstructions'] as String?,
     );
   }
 }

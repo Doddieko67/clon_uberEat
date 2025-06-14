@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/menu_item_model.dart';
 import '../../models/store_model.dart';
+import '../../models/order_model.dart';
+import '../../models/user_model.dart';
+import '../../models/operating_hours.dart';
 
 class OrderHistoryScreen extends ConsumerStatefulWidget {
   @override
@@ -16,118 +21,88 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
   late TabController _tabController;
   final _searchController = TextEditingController();
 
-  // Datos simulados de pedidos
-  final List<Map<String, dynamic>> _allOrders = [
-    {
-      'id': '#CMP1234',
-      'storeName': 'Cafetería Central',
-      'storeImage': Icons.restaurant,
-      'items': [
-        {'name': 'Tacos de Pastor', 'quantity': 2},
-        {'name': 'Quesadilla Especial', 'quantity': 1},
-      ],
-      'total': 155.0,
-      'status': 'entregado',
-      'statusColor': Colors.green,
-      'date': DateTime.now().subtract(Duration(days: 2)),
-      'deliveryTime': '18 min',
-      'rating': 5,
-      'canReorder': true,
-      'paymentMethod': 'Tarjeta',
-    },
-    {
-      'id': '#CMP1235',
-      'storeName': 'Pizza Campus',
-      'storeImage': Icons.local_pizza,
-      'items': [
-        {'name': 'Pizza Margarita', 'quantity': 1},
-        {'name': 'Refresco', 'quantity': 2},
-      ],
-      'total': 220.0,
-      'status': 'entregado',
-      'statusColor': Colors.green,
-      'date': DateTime.now().subtract(Duration(days: 5)),
-      'deliveryTime': '25 min',
-      'rating': 4,
-      'canReorder': true,
-      'paymentMethod': 'Efectivo',
-    },
-    {
-      'id': '#CMP1236',
-      'storeName': 'Sushi Express',
-      'storeImage': Icons.set_meal,
-      'items': [
-        {'name': 'California Roll', 'quantity': 2},
-        {'name': 'Salmon Roll', 'quantity': 1},
-      ],
-      'total': 380.0,
-      'status': 'cancelado',
-      'statusColor': Colors.red,
-      'date': DateTime.now().subtract(Duration(days: 8)),
-      'deliveryTime': '-',
-      'rating': 0,
-      'canReorder': true,
-      'paymentMethod': 'Tarjeta',
-      'cancelReason': 'Tienda cerrada',
-    },
-    {
-      'id': '#CMP1237',
-      'storeName': 'Healthy Corner',
-      'storeImage': Icons.eco,
-      'items': [
-        {'name': 'Ensalada César', 'quantity': 1},
-        {'name': 'Smoothie Verde', 'quantity': 1},
-      ],
-      'total': 145.0,
-      'status': 'entregado',
-      'statusColor': Colors.green,
-      'date': DateTime.now().subtract(Duration(days: 12)),
-      'deliveryTime': '15 min',
-      'rating': 5,
-      'canReorder': true,
-      'paymentMethod': 'Tarjeta',
-    },
-    {
-      'id': '#CMP1238',
-      'storeName': 'Sweet Dreams',
-      'storeImage': Icons.cake,
-      'items': [
-        {'name': 'Cheesecake', 'quantity': 2},
-        {'name': 'Café Americano', 'quantity': 1},
-      ],
-      'total': 185.0,
-      'status': 'en_preparacion',
-      'statusColor': Colors.orange,
-      'date': DateTime.now().subtract(Duration(minutes: 30)),
-      'deliveryTime': '20 min estimado',
-      'rating': 0,
-      'canReorder': false,
-      'paymentMethod': 'Tarjeta',
-    },
-  ];
+  // Helper methods to work with real Order data
+  String _getOrderStatusString(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return 'pendiente';
+      case OrderStatus.preparing:
+        return 'en_preparacion';
+      case OrderStatus.outForDelivery:
+        return 'en_camino';
+      case OrderStatus.delivered:
+        return 'entregado';
+      case OrderStatus.cancelled:
+        return 'cancelado';
+    }
+  }
 
-  List<Map<String, dynamic>> get _filteredOrders {
-    List<Map<String, dynamic>> filtered = _allOrders;
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Colors.blue;
+      case OrderStatus.preparing:
+        return Colors.orange;
+      case OrderStatus.outForDelivery:
+        return Colors.purple;
+      case OrderStatus.delivered:
+        return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Populares':
+        return Icons.local_fire_department;
+      case 'Tacos':
+        return Icons.lunch_dining;
+      case 'Quesadillas':
+        return Icons.local_dining;
+      case 'Bebidas':
+        return Icons.local_drink;
+      case 'Pizza':
+        return Icons.local_pizza;
+      case 'Sushi':
+        return Icons.set_meal;
+      case 'Saludable':
+        return Icons.eco;
+      case 'Postres':
+        return Icons.cake;
+      default:
+        return Icons.restaurant_menu;
+    }
+  }
+
+  List<Order> _getFilteredOrders(List<Order> allOrders, String? currentUserId) {
+    if (currentUserId == null) return [];
+    
+    // Filtrar solo pedidos del usuario actual
+    List<Order> filtered = allOrders
+        .where((order) => order.customerId == currentUserId)
+        .toList();
 
     // Filtrar por tab seleccionado
     switch (_tabController.index) {
       case 1: // Entregados
         filtered = filtered
-            .where((order) => order['status'] == 'entregado')
+            .where((order) => order.status == OrderStatus.delivered)
             .toList();
         break;
       case 2: // En proceso
         filtered = filtered
             .where(
               (order) =>
-                  order['status'] == 'en_preparacion' ||
-                  order['status'] == 'en_camino',
+                  order.status == OrderStatus.pending ||
+                  order.status == OrderStatus.preparing ||
+                  order.status == OrderStatus.outForDelivery,
             )
             .toList();
         break;
       case 3: // Cancelados
         filtered = filtered
-            .where((order) => order['status'] == 'cancelado')
+            .where((order) => order.status == OrderStatus.cancelled)
             .toList();
         break;
     }
@@ -135,20 +110,18 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     // Filtrar por búsqueda
     if (_searchController.text.isNotEmpty) {
       final searchTerm = _searchController.text.toLowerCase();
-      filtered = filtered
-          .where(
-            (order) =>
-                order['storeName'].toLowerCase().contains(searchTerm) ||
-                order['id'].toLowerCase().contains(searchTerm) ||
-                order['items'].any(
-                  (item) => item['name'].toLowerCase().contains(searchTerm),
-                ),
-          )
-          .toList();
+      filtered = filtered.where((order) {
+        // Buscar en ID de orden
+        if (order.id.toLowerCase().contains(searchTerm)) return true;
+        
+        // Buscar en items del pedido
+        return order.items.any((item) => 
+          item.productName.toLowerCase().contains(searchTerm));
+      }).toList();
     }
 
     // Ordenar por fecha, más reciente primero
-    filtered.sort((a, b) => b['date'].compareTo(a['date']));
+    filtered.sort((a, b) => b.orderTime.compareTo(a.orderTime));
 
     return filtered;
   }
@@ -196,100 +169,29 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     }
   }
 
-  void _reorderItems(Map<String, dynamic> order) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.shopping_cart, color: AppColors.primary, size: 48),
-
-                SizedBox(height: 16),
-
-                Text(
-                  '¿Reordenar este pedido?',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-
-                SizedBox(height: 8),
-
-                Text(
-                  'Se agregarán los productos al carrito',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-
-                SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Cancelar',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppColors.border),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(width: 12),
-
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _performReorder(order);
-                        },
-                        child: Text(
-                          'Reordenar',
-                          style: TextStyle(color: AppColors.textOnPrimary),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
   
-  void _performReorder(Map<String, dynamic> order) {
+  void _performReorder(Order order) {
     final cartNotifier = ref.read(cartProvider.notifier);
     final stores = ref.read(storeProvider);
     
     // Buscar la tienda del pedido
-    final storeId = _getStoreIdFromStoreName(order['storeName']);
-    final store = stores.firstWhere((s) => s.id == storeId, orElse: () => stores.first);
+    final store = stores.firstWhere((s) => s.id == order.storeId, 
+        orElse: () => stores.isNotEmpty ? stores.first : Store(
+          id: order.storeId,
+          name: 'Usuario Tienda',
+          storeName: 'Tienda desconocida',
+          description: '',
+          address: '',
+          category: 'Comida',
+          rating: 0.0,
+          deliveryTime: 30,
+          deliveryFee: 0.0,
+          isOpen: true,
+          lastActive: DateTime.now(),
+          openingHours: OperatingHours.standard('9:00 AM', '9:00 PM'),
+          status: UserStatus.active,
+          reviewCount: 0,
+        ));
     
     // Verificar si el carrito es de otra tienda
     if (!cartNotifier.canAddItemFromStore(store.id)) {
@@ -303,16 +205,16 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     }
   }
   
-  void _addOrderItemsToCart(Map<String, dynamic> order, Store store) {
+  void _addOrderItemsToCart(Order order, Store store) {
     final cartNotifier = ref.read(cartProvider.notifier);
     final menuItems = ref.read(menuForStoreProvider(store.id));
     int itemsAdded = 0;
     
     // Agregar cada item del pedido al carrito
-    for (var item in order['items'] as List) {
-      final menuItem = _findMenuItemByName(menuItems, item['name']);
+    for (var orderItem in order.items) {
+      final menuItem = _findMenuItemByName(menuItems, orderItem.productName);
       if (menuItem != null) {
-        cartNotifier.addItem(menuItem, quantity: item['quantity'] as int);
+        cartNotifier.addItem(menuItem, quantity: orderItem.quantity);
         itemsAdded++;
       }
     }
@@ -350,22 +252,6 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     );
   }
   
-  String _getStoreIdFromStoreName(String storeName) {
-    switch (storeName) {
-      case 'Cafetería Central':
-        return '1';
-      case 'Pizza Campus':
-        return '2';
-      case 'Sushi Express':
-        return '3';
-      case 'Healthy Corner':
-        return '4';
-      case 'Sweet Dreams':
-        return '5';
-      default:
-        return '1';
-    }
-  }
   
   void _showStoreChangeDialog(VoidCallback onConfirm) {
     showDialog(
@@ -400,8 +286,8 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     );
   }
 
-  void _rateOrder(Map<String, dynamic> order) {
-    int rating = order['rating'] ?? 0;
+  void _rateOrder(Order order) {
+    int rating = order.rating ?? 0;
 
     showDialog(
       context: context,
@@ -426,7 +312,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        order['storeImage'],
+                        _getCategoryIcon('Comida'),
                         color: AppColors.textOnPrimary,
                         size: 30,
                       ),
@@ -446,7 +332,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                     SizedBox(height: 8),
 
                     Text(
-                      order['storeName'],
+                      'Pedido #${order.id.substring(0, 8)}...',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -484,14 +370,8 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                             ? () {
                                 Navigator.pop(context);
 
-                                setState(() {
-                                  final index = _allOrders.indexWhere(
-                                    (o) => o['id'] == order['id'],
-                                  );
-                                  if (index != -1) {
-                                    _allOrders[index]['rating'] = rating;
-                                  }
-                                });
+                                // Update the order rating through the provider
+                                ref.read(ordersProvider.notifier).updateOrderRating(order.id, rating);
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -536,7 +416,24 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
         children: [
           _buildSearchBar(),
           _buildTabBar(),
-          Expanded(child: _buildOrdersList()),
+          Expanded(
+            child: Consumer(
+              builder: (context, ref, _) {
+                final ordersAsync = ref.watch(ordersProvider);
+                final authState = ref.watch(authNotifierProvider);
+                
+                return ordersAsync.when(
+                  loading: () => Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    ),
+                  ),
+                  error: (error, stack) => _buildErrorState(error.toString(), ref),
+                  data: (orders) => _buildOrdersListWithData(orders, authState.user?.id),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -635,8 +532,8 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     );
   }
 
-  Widget _buildOrdersList() {
-    final orders = _filteredOrders;
+  Widget _buildOrdersListWithData(List<Order> allOrders, String? currentUserId) {
+    final orders = _getFilteredOrders(allOrders, currentUserId);
 
     if (orders.isEmpty) {
       return _buildEmptyState();
@@ -649,6 +546,55 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
         final order = orders[index];
         return _buildOrderCard(order);
       },
+    );
+  }
+
+  Widget _buildErrorState(String error, WidgetRef ref) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: AppColors.textTertiary,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Error al cargar pedidos',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            error,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              ref.refresh(ordersProvider);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Reintentar',
+              style: TextStyle(color: AppColors.textOnPrimary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -718,7 +664,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     );
   }
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
+  Widget _buildOrderCard(Order order) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -752,7 +698,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      order['storeImage'],
+                      _getCategoryIcon('Comida'),
                       color: AppColors.textOnSecondary,
                       size: 25,
                     ),
@@ -765,7 +711,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order['storeName'],
+                          'Pedido #${order.id.substring(0, 8)}...',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -774,7 +720,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                         ),
                         SizedBox(height: 4),
                         Text(
-                          order['id'],
+                          '${order.items.length} producto(s)',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -787,15 +733,15 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: order['statusColor'].withOpacity(0.1),
+                      color: _getStatusColor(order.status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      _getStatusText(order['status']),
+                      _getStatusText(_getOrderStatusString(order.status)),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: order['statusColor'],
+                        color: _getStatusColor(order.status),
                       ),
                     ),
                   ),
@@ -813,7 +759,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                 ),
                 child: Column(
                   children: [
-                    ...order['items']
+                    ...order.items
                         .take(2)
                         .map<Widget>(
                           (item) => Padding(
@@ -822,7 +768,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${item['quantity']}x ${item['name']}',
+                                  '${item.quantity}x ${item.productName}',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: AppColors.textPrimary,
@@ -834,9 +780,9 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                         )
                         .toList(),
 
-                    if (order['items'].length > 2)
+                    if (order.items.length > 2)
                       Text(
-                        '+${order['items'].length - 2} producto(s) más',
+                        '+${order.items.length - 2} producto(s) más',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -857,7 +803,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Total: \$${order['total'].toStringAsFixed(0)}',
+                        'Total: \$${order.totalAmount.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -865,7 +811,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                         ),
                       ),
                       Text(
-                        _formatDate(order['date']),
+                        _formatDate(order.orderTime),
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -877,8 +823,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                   Row(
                     children: [
                       // Botón de calificar (solo para entregados sin calificación)
-                      if (order['status'] == 'entregado' &&
-                          order['rating'] == 0)
+                      if (order.status == OrderStatus.delivered)
                         IconButton(
                           onPressed: () => _rateOrder(order),
                           icon: Icon(
@@ -888,25 +833,12 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                           tooltip: 'Calificar',
                         ),
 
-                      // Mostrar estrellas si ya está calificado
-                      if (order['rating'] > 0)
-                        Row(
-                          children: List.generate(
-                            order['rating'],
-                            (index) => Icon(
-                              Icons.star,
-                              size: 16,
-                              color: AppColors.warning,
-                            ),
-                          ),
-                        ),
-
                       SizedBox(width: 8),
 
-                      // Botón de reordenar
-                      if (order['canReorder'])
+                      // Botón de reordenar (siempre visible para pedidos entregados)
+                      if (order.status == OrderStatus.delivered)
                         OutlinedButton(
-                          onPressed: () => _reorderItems(order),
+                          onPressed: () => _performReorder(order),
                           child: Text(
                             'Reordenar',
                             style: TextStyle(
@@ -936,39 +868,50 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
     );
   }
 
-  void _showOrderDetails(Map<String, dynamic> order) {
+  void _showOrderDetails(Order order) {
+    // Estado persistente fuera del builder
+    bool isDetailsExpanded = false;
+    bool isProductsExpanded = true;
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.textTertiary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.75,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) => Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.textTertiary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
 
-              SizedBox(height: 20),
+                  SizedBox(height: 20),
 
-              // Header
-              Row(
-                children: [
+                  // Header
+                  Row(
+                    children: [
                   Container(
                     width: 60,
                     height: 60,
@@ -977,7 +920,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      order['storeImage'],
+                      _getCategoryIcon('Comida'),
                       color: AppColors.textOnSecondary,
                       size: 30,
                     ),
@@ -990,7 +933,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order['storeName'],
+                          'Pedido #${order.id.substring(0, 8)}...',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -998,7 +941,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                           ),
                         ),
                         Text(
-                          order['id'],
+                          'ID: ${order.id}',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -1011,15 +954,15 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: order['statusColor'].withOpacity(0.1),
+                      color: _getStatusColor(order.status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _getStatusText(order['status']),
+                      _getStatusText(_getOrderStatusString(order.status)),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: order['statusColor'],
+                        color: _getStatusColor(order.status),
                       ),
                     ),
                   ),
@@ -1028,103 +971,128 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
 
               SizedBox(height: 24),
 
-              // Detalles
-              Text(
-                'Detalles del pedido',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-
-              SizedBox(height: 16),
-
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
+              // Detalles del pedido - Collapsible
+              _buildCollapsibleSection(
+                title: 'Detalles del pedido',
+                isExpanded: isDetailsExpanded,
+                onToggle: () {
+                  setModalState(() {
+                    isDetailsExpanded = !isDetailsExpanded;
+                  });
+                },
+                content: Column(
                   children: [
-                    _buildDetailRow('Fecha', _formatDate(order['date'])),
-                    _buildDetailRow('Tiempo de entrega', order['deliveryTime']),
-                    _buildDetailRow('Método de pago', order['paymentMethod']),
-                    if (order['cancelReason'] != null)
-                      _buildDetailRow(
-                        'Motivo de cancelación',
-                        order['cancelReason'],
-                      ),
+                    _buildDetailRow('Fecha', _formatDate(order.orderTime)),
+                    _buildDetailRow('Cliente', order.customerId),
+                    _buildDetailRow('Tienda', order.storeId),
+                    if (order.deliveryAddress != null)
+                      _buildDetailRow('Dirección de entrega', order.deliveryAddress!),
+                    if (order.specialInstructions != null && order.specialInstructions!.isNotEmpty)
+                      _buildDetailRow('Instrucciones especiales', order.specialInstructions!),
                   ],
                 ),
               ),
 
-              SizedBox(height: 20),
-
-              // Items
-              Text(
-                'Productos ordenados',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              // Productos ordenados - Collapsible
+              _buildCollapsibleSection(
+                title: 'Productos ordenados (${order.items.length})',
+                isExpanded: isProductsExpanded,
+                onToggle: () {
+                  setModalState(() {
+                    isProductsExpanded = !isProductsExpanded;
+                  });
+                },
+                content: order.items.isEmpty 
+                  ? Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        'No hay productos en este pedido',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : Column(
+                      children: order.items.map((item) => Container(
+                    margin: EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.border.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: AppGradients.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            _getCategoryIcon('Comida'),
+                            color: AppColors.textOnPrimary,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.productName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              if (item.specialInstructions != null && item.specialInstructions!.isNotEmpty)
+                                Text(
+                                  item.specialInstructions!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${item.quantity}x',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '\$${(item.priceAtPurchase * item.quantity).toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                      )).toList(),
+                    ),
               ),
 
               SizedBox(height: 16),
-
-              Expanded(
-                child: ListView.builder(
-                  itemCount: order['items'].length,
-                  itemBuilder: (context, index) {
-                    final item = order['items'][index];
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12),
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              gradient: AppGradients.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.fastfood,
-                              color: AppColors.textOnPrimary,
-                              size: 20,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              item['name'],
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${item['quantity']}x',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
 
               // Total
               Container(
@@ -1146,7 +1114,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                       ),
                     ),
                     Text(
-                      '\$${order['total'].toStringAsFixed(0)}',
+                      '\$${order.totalAmount.toStringAsFixed(0)}',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -1156,9 +1124,77 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
                   ],
                 ),
               ),
-            ],
-          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleSection({
+    required String title,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required Widget content,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 1,
         ),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: Duration(milliseconds: 200),
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textSecondary,
+                      size: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: Duration(milliseconds: 250),
+            crossFadeState: isExpanded 
+                ? CrossFadeState.showSecond 
+                : CrossFadeState.showFirst,
+            firstChild: SizedBox.shrink(),
+            secondChild: Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: content,
+            ),
+          ),
+        ],
       ),
     );
   }
