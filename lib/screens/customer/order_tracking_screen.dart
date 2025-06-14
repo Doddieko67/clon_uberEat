@@ -196,6 +196,133 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       }
     });
   }
+  
+  void _showCancelOrderDialog(Order order) {
+    final ordersNotifier = ref.read(ordersProvider.notifier);
+    final canCancel = ordersNotifier.canCancelOrder(order);
+    
+    if (!canCancel) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Este pedido ya no puede ser cancelado'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String selectedReason = 'Cambié de opinión';
+        final reasons = [
+          'Cambié de opinión',
+          'Tiempo de entrega muy largo',
+          'Problemas con el pago',
+          'Ordené por error',
+          'Otro motivo',
+        ];
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: Text(
+                'Cancelar pedido',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '¿Estás seguro de que quieres cancelar este pedido?',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Razón de cancelación:',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  ...reasons.map((reason) => RadioListTile<String>(
+                    title: Text(
+                      reason,
+                      style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                    ),
+                    value: reason,
+                    groupValue: selectedReason,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedReason = value!;
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                  )),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Mantener pedido',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await _cancelOrder(order.id, selectedReason);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                  ),
+                  child: Text(
+                    'Cancelar pedido',
+                    style: TextStyle(color: AppColors.textOnPrimary),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  
+  Future<void> _cancelOrder(String orderId, String reason) async {
+    try {
+      final ordersNotifier = ref.read(ordersProvider.notifier);
+      await ordersNotifier.cancelOrder(orderId, cancelReason: reason);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.textOnPrimary),
+              SizedBox(width: 8),
+              Text('Pedido cancelado exitosamente'),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cancelar el pedido: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -341,8 +468,8 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
               ),
             ),
             data: (orders) {
-              // Buscar la orden actual
-              if (_orderId != null && _currentOrder == null) {
+              // Always update the current order with the latest data from Firestore
+              if (_orderId != null) {
                 final order = orders.firstWhere(
                   (o) => o.id == _orderId,
                   orElse: () => Order(
@@ -356,7 +483,19 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                     orderTime: DateTime.now(),
                   ),
                 );
-                _currentOrder = order;
+                // Update current order with latest data
+                if (_currentOrder?.id == order.id && _currentOrder?.status != order.status) {
+                  // Order status has changed, trigger UI rebuild
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() {
+                        _currentOrder = order;
+                      });
+                    }
+                  });
+                } else {
+                  _currentOrder = order;
+                }
               }
               
               if (_currentOrder == null) {
@@ -398,7 +537,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                     if (currentStep == 2) SizedBox(height: 24),
                     _buildOrderSummary(_currentOrder!),
                     SizedBox(height: 24),
-                    _buildContactButtons(),
+                    _buildContactButtons(_currentOrder!),
                   ],
                 ),
               );
@@ -414,7 +553,11 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       backgroundColor: AppColors.surface,
       elevation: 0,
       leading: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/customer-home',
+          (route) => false,
+        ),
         icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
       ),
       title: Text(
@@ -425,6 +568,22 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
         ),
       ),
       actions: [
+        // Mostrar botón cancelar solo si el pedido puede ser cancelado
+        if (_currentOrder != null)
+          Consumer(
+            builder: (context, ref, _) {
+              final ordersNotifier = ref.read(ordersProvider.notifier);
+              final canCancel = ordersNotifier.canCancelOrder(_currentOrder!);
+              
+              if (!canCancel) return SizedBox.shrink();
+              
+              return IconButton(
+                onPressed: () => _showCancelOrderDialog(_currentOrder!),
+                icon: Icon(Icons.cancel, color: AppColors.error),
+                tooltip: 'Cancelar pedido',
+              );
+            },
+          ),
         IconButton(
           onPressed: () {
             // TODO: Compartir estado del pedido
@@ -963,51 +1122,135 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     );
   }
 
-  Widget _buildContactButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              // TODO: Contactar tienda
-            },
-            icon: Icon(Icons.store, color: AppColors.primary),
-            label: Text(
-              'Contactar tienda',
-              style: TextStyle(color: AppColors.primary),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              side: BorderSide(color: AppColors.primary),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+  Widget _buildContactButtons(Order order) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final ordersNotifier = ref.read(ordersProvider.notifier);
+        final canCancel = ordersNotifier.canCancelOrder(order);
+        
+        if (canCancel) {
+          // Mostrar botón de cancelar si es posible
+          return Column(
+            children: [
+              // Botón de cancelar pedido
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showCancelOrderDialog(order),
+                  icon: Icon(Icons.cancel, color: AppColors.error),
+                  label: Text(
+                    'Cancelar pedido',
+                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: AppColors.error, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
+              
+              SizedBox(height: 12),
+              
+              // Botones de contacto
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Contactar tienda
+                      },
+                      icon: Icon(Icons.store, color: AppColors.primary),
+                      label: Text(
+                        'Contactar tienda',
+                        style: TextStyle(color: AppColors.primary),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: AppColors.primary),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
 
-        SizedBox(width: 12),
+                  SizedBox(width: 12),
 
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Ayuda/soporte
-            },
-            icon: Icon(Icons.help_outline, color: AppColors.textOnPrimary),
-            label: Text(
-              'Ayuda',
-              style: TextStyle(color: AppColors.textOnPrimary),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-              padding: EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // TODO: Ayuda/soporte
+                      },
+                      icon: Icon(Icons.help_outline, color: AppColors.textOnPrimary),
+                      label: Text(
+                        'Ayuda',
+                        style: TextStyle(color: AppColors.textOnPrimary),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ),
-      ],
+            ],
+          );
+        } else {
+          // Solo mostrar botones de contacto si no se puede cancelar
+          return Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: Contactar tienda
+                  },
+                  icon: Icon(Icons.store, color: AppColors.primary),
+                  label: Text(
+                    'Contactar tienda',
+                    style: TextStyle(color: AppColors.primary),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(width: 12),
+
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Ayuda/soporte
+                  },
+                  icon: Icon(Icons.help_outline, color: AppColors.textOnPrimary),
+                  label: Text(
+                    'Ayuda',
+                    style: TextStyle(color: AppColors.textOnPrimary),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+      },
     );
   }
 }

@@ -147,6 +147,9 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
           .toList();
     }
 
+    // Ordenar por fecha, más reciente primero
+    filtered.sort((a, b) => b['date'].compareTo(a['date']));
+
     return filtered;
   }
 

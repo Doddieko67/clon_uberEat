@@ -48,6 +48,33 @@ class OrdersNotifier extends AsyncNotifier<List<Order>> {
     }
   }
 
+  // Check if an order can be cancelled
+  bool canCancelOrder(Order order) {
+    // Solo se puede cancelar si está pendiente o preparando
+    if (order.status == OrderStatus.delivered || order.status == OrderStatus.cancelled) {
+      return false;
+    }
+    
+    // Solo se puede cancelar dentro de los primeros 10 minutos
+    final timeDifference = DateTime.now().difference(order.orderTime);
+    return timeDifference.inMinutes <= 10;
+  }
+
+  // Cancel an order
+  Future<void> cancelOrder(String orderId, {String? cancelReason}) async {
+    state = const AsyncValue.loading();
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'status': OrderStatus.cancelled.toString().split('.').last,
+        'cancelReason': cancelReason ?? 'Cancelado por el usuario',
+        'cancelledAt': DateTime.now().toIso8601String(),
+      });
+      // State will be updated by the snapshot listener
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
   // Delete an order
   Future<void> deleteOrder(String orderId) async {
     state = const AsyncValue.loading();
