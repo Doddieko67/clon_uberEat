@@ -13,7 +13,7 @@ class StoreDetailScreen extends ConsumerStatefulWidget {
 
 class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   final _searchController = TextEditingController();
   Store? _store;
   List<String> _categories = [];
@@ -29,7 +29,10 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
         setState(() {
           _store = args;
           _categories = ref.read(categoriesForStoreProvider(args.id));
-          _tabController = TabController(length: _categories.length, vsync: this);
+          // Solo crear TabController si hay categorías
+          if (_categories.isNotEmpty) {
+            _tabController = TabController(length: _categories.length, vsync: this);
+          }
         });
       }
     });
@@ -37,7 +40,7 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -63,15 +66,12 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
 
   void _incrementItem(MenuItem menuItem) {
     final cartNotifier = ref.read(cartProvider.notifier);
-    cartNotifier.addItem(menuItem);
+    cartNotifier.incrementItemByMenuId(menuItem.id);
   }
 
   void _decrementItem(String menuItemId) {
     final cartNotifier = ref.read(cartProvider.notifier);
-    final cartItem = cartNotifier.getCartItem(menuItemId);
-    if (cartItem != null) {
-      cartNotifier.decrementItem(cartItem.id);
-    }
+    cartNotifier.decrementItemByMenuId(menuItemId);
   }
 
   void _showStoreChangeDialog(VoidCallback onConfirm) {
@@ -416,7 +416,7 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
           borderRadius: BorderRadius.circular(12),
         ),
         child: TabBar(
-          controller: _tabController,
+          controller: _tabController!,
           isScrollable: true,
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
@@ -458,7 +458,7 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
       );
     }
 
-    final selectedCategory = _categories[_tabController.index];
+    final selectedCategory = _categories[_tabController?.index ?? 0];
     
     // Usar provider para obtener los productos filtrados
     final allProducts = ref.watch(menuByCategoryProvider((

@@ -7,7 +7,7 @@ import 'package:clonubereat/models/store_model.dart';
 class CartNotifier extends StateNotifier<Cart> {
   CartNotifier() : super(Cart.empty('default_cart'));
 
-  // CÛdigos promocionales disponibles
+  // C√≥digos promocionales disponibles
   static const Map<String, double> _promoCodes = {
     'ESTUDIANTE10': 10.0,
     'PRIMERAVEZ': 15.0,
@@ -29,7 +29,7 @@ class CartNotifier extends StateNotifier<Cart> {
 
   void incrementItem(String itemId) {
     final item = state.items.firstWhere((item) => item.id == itemId);
-    if (item.quantity < 15) { // LÌmite m·ximo como en la UI actual
+    if (item.quantity < 15) { // L√≠mite m√°ximo como en la UI actual
       updateItemQuantity(itemId, item.quantity + 1);
     }
   }
@@ -64,7 +64,7 @@ class CartNotifier extends StateNotifier<Cart> {
   }
 
   bool canAddItemFromStore(String storeId) {
-    // Si el carrito est· vacÌo o es de la misma tienda, permitir
+    // Si el carrito est√° vac√≠o o es de la misma tienda, permitir
     return state.isEmpty || state.storeId == storeId;
   }
 
@@ -75,7 +75,8 @@ class CartNotifier extends StateNotifier<Cart> {
     );
   }
 
-  CartItem? getCartItem(String menuItemId) {
+  // M√©todos para buscar por ID de MenuItem
+  CartItem? getCartItemByMenuId(String menuItemId) {
     try {
       return state.items.firstWhere(
         (item) => item.menuItem.id == menuItemId,
@@ -85,13 +86,45 @@ class CartNotifier extends StateNotifier<Cart> {
     }
   }
 
+  // M√©todos para buscar por ID de CartItem
+  CartItem? getCartItemById(String cartItemId) {
+    try {
+      return state.items.firstWhere(
+        (item) => item.id == cartItemId,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // M√©todo de conveniencia - mantener compatibilidad
+  CartItem? getCartItem(String menuItemId) {
+    return getCartItemByMenuId(menuItemId);
+  }
+
   int getItemQuantity(String menuItemId) {
-    final cartItem = getCartItem(menuItemId);
+    final cartItem = getCartItemByMenuId(menuItemId);
     return cartItem?.quantity ?? 0;
   }
 
   bool hasItem(String menuItemId) {
-    return getCartItem(menuItemId) != null;
+    return getCartItemByMenuId(menuItemId) != null;
+  }
+
+  // M√©todo mejorado para decrementar usando MenuItem ID
+  void decrementItemByMenuId(String menuItemId) {
+    final cartItem = getCartItemByMenuId(menuItemId);
+    if (cartItem != null) {
+      updateItemQuantity(cartItem.id, cartItem.quantity - 1);
+    }
+  }
+
+  // M√©todo mejorado para incrementar usando MenuItem ID  
+  void incrementItemByMenuId(String menuItemId) {
+    final cartItem = getCartItemByMenuId(menuItemId);
+    if (cartItem != null) {
+      updateItemQuantity(cartItem.id, cartItem.quantity + 1);
+    }
   }
 }
 
@@ -100,7 +133,7 @@ final cartProvider = StateNotifierProvider<CartNotifier, Cart>((ref) {
   return CartNotifier();
 });
 
-// Providers derivados para facilitar el acceso a propiedades especÌficas
+// Providers derivados para facilitar el acceso a propiedades espec√≠ficas
 final cartItemsCountProvider = Provider<int>((ref) {
   final cart = ref.watch(cartProvider);
   return cart.totalItems;
@@ -136,14 +169,14 @@ final cartPromoDiscountProvider = Provider<double>((ref) {
   return cart.promoDiscount;
 });
 
-// Provider para obtener la cantidad de un item especÌfico
+// Provider para obtener la cantidad de un item espec√≠fico
 final cartItemQuantityProvider = Provider.family<int, String>((ref, menuItemId) {
   final cart = ref.watch(cartProvider);
   final cartItem = cart.items.where((item) => item.menuItem.id == menuItemId).firstOrNull;
   return cartItem?.quantity ?? 0;
 });
 
-// Provider para verificar si un item est· en el carrito
+// Provider para verificar si un item est√° en el carrito
 final cartHasItemProvider = Provider.family<bool, String>((ref, menuItemId) {
   final cart = ref.watch(cartProvider);
   return cart.items.any((item) => item.menuItem.id == menuItemId);

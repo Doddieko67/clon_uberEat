@@ -15,7 +15,6 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
 
-  final double _serviceFee = 5.0;
 
   @override
   void initState() {
@@ -42,43 +41,40 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
   }
 
 
-  void _updateQuantity(String itemId, int newQuantity) {
+  void _updateQuantity(String cartItemId, int newQuantity) {
     final cartNotifier = ref.read(cartProvider.notifier);
-    final cartItem = cartNotifier.getCartItem(itemId);
     
-    if (cartItem != null) {
-      // Validar límites
-      if (newQuantity < 1) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('La cantidad mínima es 1'),
-            backgroundColor: AppColors.warning,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 1),
-          ),
-        );
-        return;
-      }
-      
-      if (newQuantity > 15) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('La cantidad máxima es 15'),
-            backgroundColor: AppColors.warning,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 1),
-          ),
-        );
-        return;
-      }
-
-      cartNotifier.updateItemQuantity(itemId, newQuantity);
+    // Validar límites
+    if (newQuantity < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('La cantidad mínima es 1'),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
     }
+    
+    if (newQuantity > 15) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('La cantidad máxima es 15'),
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
+    cartNotifier.updateItemQuantity(cartItemId, newQuantity);
   }
 
-  void _removeItem(String itemId) {
+  void _removeItem(String cartItemId) {
     final cartNotifier = ref.read(cartProvider.notifier);
-    cartNotifier.removeItem(itemId);
+    cartNotifier.removeItem(cartItemId);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -525,9 +521,14 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      // Al presionar "menos", envía la cantidad actual - 1
-                      onPressed: () =>
-                          _updateQuantity(item.id, item.quantity - 1),
+                      onPressed: () {
+                        if (item.quantity > 1) {
+                          final cartNotifier = ref.read(cartProvider.notifier);
+                          cartNotifier.decrementItem(item.id);
+                        } else {
+                          _removeItem(item.id);
+                        }
+                      },
                       icon: Icon(
                         Icons.remove,
                         color: AppColors.primary,
@@ -550,9 +551,21 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
                     ),
 
                     IconButton(
-                      // Al presionar "más", envía la cantidad actual + 1
-                      onPressed: () =>
-                          _updateQuantity(item.id, item.quantity + 1),
+                      onPressed: () {
+                        if (item.quantity < 15) {
+                          final cartNotifier = ref.read(cartProvider.notifier);
+                          cartNotifier.incrementItem(item.id);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('La cantidad máxima es 15'),
+                              backgroundColor: AppColors.warning,
+                              behavior: SnackBarBehavior.floating,
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        }
+                      },
                       icon: Icon(Icons.add, color: AppColors.primary, size: 18),
                       constraints: BoxConstraints(minWidth: 40, minHeight: 40),
                     ),
@@ -726,7 +739,7 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
             builder: (context, ref, _) {
               final cart = ref.watch(cartProvider);
               final deliveryFee = cart.store?.deliveryFee ?? 0.0;
-              final total = cart.subtotal - cart.promoDiscount + deliveryFee + _serviceFee;
+              final total = cart.total;
               
               return Column(
                 children: [
@@ -759,7 +772,7 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
 
                   _buildSummaryRow(
                     'Tarifa de servicio',
-                    '\$${_serviceFee.toStringAsFixed(0)}',
+                    '\$${cart.serviceFee.toStringAsFixed(0)}',
                   ),
 
                   Divider(color: AppColors.border, thickness: 1, height: 24),
@@ -853,7 +866,7 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
                     builder: (context, ref, _) {
                       final cart = ref.watch(cartProvider);
                       final deliveryFee = cart.store?.deliveryFee ?? 0.0;
-                      final total = cart.subtotal - cart.promoDiscount + deliveryFee + _serviceFee;
+                      final total = cart.total;
                       return Text(
                         'Proceder al pago • \$${total.toStringAsFixed(0)}',
                         style: TextStyle(

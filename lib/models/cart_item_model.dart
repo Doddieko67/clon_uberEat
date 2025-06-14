@@ -72,11 +72,16 @@ class CartItem {
     );
   }
 
-  factory CartItem.fromMenuItem(MenuItem menuItem, {int quantity = 1}) {
+  factory CartItem.fromMenuItem(MenuItem menuItem, {int quantity = 1, String? specialInstructions, List<String>? customizations}) {
+    // Generar ID único basado en timestamp y un valor aleatorio para evitar colisiones
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = timestamp % 10000;
     return CartItem(
-      id: '${menuItem.id}_${DateTime.now().millisecondsSinceEpoch}',
+      id: '${menuItem.id}_${timestamp}_$random',
       menuItem: menuItem,
       quantity: quantity,
+      specialInstructions: specialInstructions,
+      customizations: customizations,
     );
   }
 }

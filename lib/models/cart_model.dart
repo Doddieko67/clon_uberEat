@@ -21,9 +21,10 @@ class Cart {
   }) : updatedAt = updatedAt ?? DateTime.now();
 
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.total);
-  double get deliveryFee => store?.deliveryFee ?? 30.0;
-  double get tax => subtotal * 0.16; // 16% IVA
-  double get total => subtotal + deliveryFee + tax - promoDiscount;
+  double get deliveryFee => store?.deliveryFee ?? 0.0;
+  double get serviceFee => 5.0; // Tarifa de servicio fija
+  double get tax => subtotal * 0.16; // 16% IVA (para futura implementación)
+  double get total => subtotal + deliveryFee + serviceFee - promoDiscount;
   int get totalItems => items.fold(0, (sum, item) => sum + item.quantity);
   bool get isEmpty => items.isEmpty;
   bool get isNotEmpty => items.isNotEmpty;
@@ -57,7 +58,9 @@ class Cart {
 
   Cart addItem(CartItem item) {
     final existingIndex = items.indexWhere((cartItem) => 
-        cartItem.menuItem.id == item.menuItem.id);
+        cartItem.menuItem.id == item.menuItem.id &&
+        cartItem.specialInstructions == item.specialInstructions &&
+        _listEquals(cartItem.customizations, item.customizations));
     
     if (existingIndex >= 0) {
       final updatedItems = List<CartItem>.from(items);
@@ -72,6 +75,15 @@ class Cart {
         updatedAt: DateTime.now(),
       );
     }
+  }
+  
+  bool _listEquals<T>(List<T>? a, List<T>? b) {
+    if (a == null) return b == null;
+    if (b == null || a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Cart removeItem(String itemId) {
