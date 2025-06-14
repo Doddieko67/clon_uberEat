@@ -7,6 +7,11 @@ class MenuItem {
   final String? imageUrl;
   final String category;
   final bool isAvailable;
+  final List<String>? ingredients;
+  final int? calories;
+  final int? preparationTime;
+  final bool isPopular;
+  final double? originalPrice;
 
   MenuItem({
     required this.id,
@@ -17,7 +22,14 @@ class MenuItem {
     this.imageUrl,
     required this.category,
     required this.isAvailable,
+    this.ingredients,
+    this.calories,
+    this.preparationTime,
+    this.isPopular = false,
+    this.originalPrice,
   });
+
+  bool get hasDiscount => originalPrice != null && originalPrice! > price;
 
   MenuItem copyWith({
     String? id,
@@ -28,6 +40,11 @@ class MenuItem {
     String? imageUrl,
     String? category,
     bool? isAvailable,
+    List<String>? ingredients,
+    int? calories,
+    int? preparationTime,
+    bool? isPopular,
+    double? originalPrice,
   }) {
     return MenuItem(
       id: id ?? this.id,
@@ -38,6 +55,11 @@ class MenuItem {
       imageUrl: imageUrl ?? this.imageUrl,
       category: category ?? this.category,
       isAvailable: isAvailable ?? this.isAvailable,
+      ingredients: ingredients ?? this.ingredients,
+      calories: calories ?? this.calories,
+      preparationTime: preparationTime ?? this.preparationTime,
+      isPopular: isPopular ?? this.isPopular,
+      originalPrice: originalPrice ?? this.originalPrice,
     );
   }
 
@@ -51,6 +73,11 @@ class MenuItem {
       'imageUrl': imageUrl,
       'category': category,
       'isAvailable': isAvailable,
+      'ingredients': ingredients,
+      'calories': calories,
+      'preparationTime': preparationTime,
+      'isPopular': isPopular,
+      'originalPrice': originalPrice,
     };
   }
 
@@ -64,6 +91,15 @@ class MenuItem {
       imageUrl: map['imageUrl'] as String?,
       category: map['category'] as String,
       isAvailable: map['isAvailable'] as bool,
+      ingredients: map['ingredients'] != null 
+          ? List<String>.from(map['ingredients'])
+          : null,
+      calories: map['calories'] as int?,
+      preparationTime: map['preparationTime'] as int?,
+      isPopular: map['isPopular'] as bool? ?? false,
+      originalPrice: map['originalPrice'] != null 
+          ? (map['originalPrice'] as num).toDouble()
+          : null,
     );
   }
 }

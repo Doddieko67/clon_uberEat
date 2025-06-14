@@ -1,0 +1,37 @@
+❯ flutter run
+Launching lib/main.dart on SM A055M in debug mode...
+lib/screens/customer/cart_screen.dart:310:25: Error: Can't find ')' to match '('.
+        return Container(
+                        ^
+lib/screens/customer/cart_screen.dart:171:40: Error: A value of type 'Widget?' can't be returned from a function with return type 'Widget' because 'Widget?' is nullable and 'Widget' isn't.
+ - 'Widget' is from 'package:flutter/src/widgets/framework.dart' ('../../../development/flutter/packages/flutter/lib/src/widgets/framework.dart').
+          return cart.items.isNotEmpty ? _buildCheckoutButton() : null;
+                                       ^
+lib/screens/customer/cart_screen.dart:737:28: Error: The getter 'totalSavings' isn't defined for the class 'Cart'.
+ - 'Cart' is from 'package:clonubereat/models/cart_model.dart' ('lib/models/cart_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'totalSavings'.
+                  if (cart.totalSavings > 0)
+                           ^^^^^^^^^^^^
+lib/screens/customer/cart_screen.dart:740:34: Error: The getter 'totalSavings' isn't defined for the class 'Cart'.
+ - 'Cart' is from 'package:clonubereat/models/cart_model.dart' ('lib/models/cart_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'totalSavings'.
+                      '-\$${cart.totalSavings.toStringAsFixed(0)}',
+                                 ^^^^^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 6s
+Running Gradle task 'assembleDebug'...                              6.8s
+Error: Gradle task assembleDebug failed with exit code 1

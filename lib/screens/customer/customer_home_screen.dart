@@ -1,7 +1,9 @@
 import 'package:clonubereat/providers/auth_provider.dart';
+import 'package:clonubereat/providers/store_provider.dart';
+import 'package:clonubereat/providers/cart_provider.dart';
+import 'package:clonubereat/models/store_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,74 +27,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     'Postres',
     'Bebidas',
     'Saludable',
-  ];
-
-  final List<Map<String, dynamic>> _stores = [
-    {
-      'id': '1',
-      'name': 'Cafetería Central',
-      'description': 'Comida tradicional mexicana',
-      'category': 'Mexicana',
-      'rating': 4.8,
-      'deliveryTime': '15-25 min',
-      'deliveryFee': 0,
-      'image': Icons.restaurant,
-      'isOpen': true,
-      'specialOffer': '20% OFF en tu primer pedido',
-      'products': ['Tacos', 'Quesadillas', 'Tortas'],
-    },
-    {
-      'id': '2',
-      'name': 'Pizza Campus',
-      'description': 'Las mejores pizzas del campus',
-      'category': 'Italiana',
-      'rating': 4.6,
-      'deliveryTime': '20-30 min',
-      'deliveryFee': 15,
-      'image': Icons.local_pizza,
-      'isOpen': true,
-      'specialOffer': null,
-      'products': ['Pizza Margarita', 'Pizza Pepperoni', 'Lasaña'],
-    },
-    {
-      'id': '3',
-      'name': 'Sushi Express',
-      'description': 'Sushi fresco y rápido',
-      'category': 'Asiática',
-      'rating': 4.9,
-      'deliveryTime': '25-35 min',
-      'deliveryFee': 20,
-      'image': Icons.set_meal,
-      'isOpen': false,
-      'specialOffer': null,
-      'products': ['California Roll', 'Salmon Roll', 'Tempura'],
-    },
-    {
-      'id': '4',
-      'name': 'Healthy Corner',
-      'description': 'Opciones saludables y nutritivas',
-      'category': 'Saludable',
-      'rating': 4.5,
-      'deliveryTime': '10-20 min',
-      'deliveryFee': 0,
-      'image': Icons.eco,
-      'isOpen': true,
-      'specialOffer': 'Combo saludable desde \$89',
-      'products': ['Ensaladas', 'Smoothies', 'Wraps'],
-    },
-    {
-      'id': '5',
-      'name': 'Sweet Dreams',
-      'description': 'Postres artesanales',
-      'category': 'Postres',
-      'rating': 4.7,
-      'deliveryTime': '15-25 min',
-      'deliveryFee': 10,
-      'image': Icons.cake,
-      'isOpen': true,
-      'specialOffer': null,
-      'products': ['Cheesecake', 'Brownies', 'Frappés'],
-    },
+    'Americana',
   ];
 
   @override
@@ -101,16 +36,19 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     super.dispose();
   }
 
-  List<Map<String, dynamic>> get _filteredStores {
-    return _stores.where((store) {
+  List<Store> _getFilteredStores(List<Store> stores) {
+    return stores.where((store) {
       final matchesCategory =
           _selectedCategory == 'Todos' ||
-          store['category'] == _selectedCategory;
+          store.category == _selectedCategory;
       final matchesSearch =
           _searchController.text.isEmpty ||
-          store['name'].toLowerCase().contains(
+          store.storeName.toLowerCase().contains(
             _searchController.text.toLowerCase(),
-          );
+          ) ||
+          store.description?.toLowerCase().contains(
+            _searchController.text.toLowerCase(),
+          ) == true;
       return matchesCategory && matchesSearch;
     }).toList();
   }
@@ -395,7 +333,9 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   // }
 
   Widget _buildStoresList() {
-    final stores = _filteredStores;
+    final allStores = ref.watch(storeProvider);
+    final cartItemsCount = ref.watch(cartItemsCountProvider);
+    final stores = _getFilteredStores(allStores);
 
     if (stores.isEmpty) {
       return Center(
@@ -432,7 +372,29 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
     );
   }
 
-  Widget _buildStoreCard(Map<String, dynamic> store) {
+  Widget _buildStoreCard(Store store) {
+    // Icono basado en categoría
+    IconData getStoreIcon(String category) {
+      switch (category) {
+        case 'Mexicana':
+          return Icons.restaurant;
+        case 'Italiana':
+          return Icons.local_pizza;
+        case 'Asiática':
+          return Icons.set_meal;
+        case 'Saludable':
+          return Icons.eco;
+        case 'Postres':
+          return Icons.cake;
+        case 'Bebidas':
+          return Icons.local_drink;
+        case 'Americana':
+          return Icons.lunch_dining;
+        default:
+          return Icons.restaurant;
+      }
+    }
+
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -470,7 +432,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      store['image'],
+                      getStoreIcon(store.category),
                       color: AppColors.textOnSecondary,
                       size: 30,
                     ),
@@ -487,7 +449,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                           children: [
                             Expanded(
                               child: Text(
-                                store['name'],
+                                store.storeName,
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -501,13 +463,13 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: store['isOpen']
+                                color: store.isOpen
                                     ? AppColors.success
                                     : AppColors.error,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                store['isOpen'] ? 'Abierto' : 'Cerrado',
+                                store.isOpen ? 'Abierto' : 'Cerrado',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
@@ -521,11 +483,13 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         SizedBox(height: 4),
 
                         Text(
-                          store['description'],
+                          store.description ?? 'Restaurante en ${store.category}',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
 
                         SizedBox(height: 8),
@@ -539,11 +503,19 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
                             SizedBox(width: 4),
                             Text(
-                              '${store['rating']}',
+                              '${store.rating}',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              '(${store.reviewCount})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             SizedBox(width: 16),
@@ -554,7 +526,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
                             SizedBox(width: 4),
                             Text(
-                              store['deliveryTime'],
+                              '${store.deliveryTime} min',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
@@ -562,6 +534,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
                           ],
                         ),
+                        SizedBox(height: 4),
                         Row(
                           children: [
                             Icon(
@@ -571,15 +544,15 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                             ),
                             SizedBox(width: 4),
                             Text(
-                              store['deliveryFee'] == 0
+                              store.deliveryFee == 0
                                   ? 'Gratis'
-                                  : '\$${store['deliveryFee']}',
+                                  : '\$${store.deliveryFee.toInt()}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: store['deliveryFee'] == 0
+                                color: store.deliveryFee == 0
                                     ? AppColors.success
                                     : AppColors.textSecondary,
-                                fontWeight: store['deliveryFee'] == 0
+                                fontWeight: store.deliveryFee == 0
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                               ),
@@ -593,7 +566,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
               ),
 
               // Special Offer
-              if (store['specialOffer'] != null) ...[
+              if (store.hasSpecialOffer && store.specialOffer != null) ...[
                 SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -611,12 +584,16 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                         color: AppColors.primary,
                       ),
                       SizedBox(width: 8),
-                      Text(
-                        store['specialOffer'],
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                      Expanded(
+                        child: Text(
+                          store.specialOffer!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -631,6 +608,8 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   }
 
   Widget _buildBottomNavigation() {
+    final cartItemsCount = ref.watch(cartItemsCountProvider);
+    
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -679,21 +658,59 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
             icon: Stack(
               children: [
                 Icon(Icons.shopping_cart_outlined),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
+                if (cartItemsCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.surface, width: 1),
+                      ),
+                      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        cartItemsCount > 99 ? '99+' : cartItemsCount.toString(),
+                        style: TextStyle(
+                          color: AppColors.textOnPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
-            activeIcon: Icon(Icons.shopping_cart),
+            activeIcon: Stack(
+              children: [
+                Icon(Icons.shopping_cart),
+                if (cartItemsCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.surface, width: 1),
+                      ),
+                      constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text(
+                        cartItemsCount > 99 ? '99+' : cartItemsCount.toString(),
+                        style: TextStyle(
+                          color: AppColors.textOnPrimary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             label: 'Carrito',
           ),
           BottomNavigationBarItem(

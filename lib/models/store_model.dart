@@ -10,11 +10,16 @@ class Store extends User {
   final OperatingHours openingHours;
   final bool isOpen;
   final String? bannerUrl;
+  final String? description;
+  final double deliveryFee;
+  final int deliveryTime;
+  final String? specialOffer;
+  final bool hasSpecialOffer;
 
   Store({
     required String id,
     required String name,
-    String? phone, // Made optional
+    String? phone,
     required UserStatus status,
     required DateTime lastActive,
     String? photoUrl,
@@ -27,6 +32,11 @@ class Store extends User {
     required this.openingHours,
     required this.isOpen,
     this.bannerUrl,
+    this.description,
+    required this.deliveryFee,
+    required this.deliveryTime,
+    this.specialOffer,
+    this.hasSpecialOffer = false,
   }) : super(
           id: id,
           name: name,
@@ -51,6 +61,11 @@ class Store extends User {
       'openingHours': openingHours.toMap(),
       'isOpen': isOpen,
       'bannerUrl': bannerUrl,
+      'description': description,
+      'deliveryFee': deliveryFee,
+      'deliveryTime': deliveryTime,
+      'specialOffer': specialOffer,
+      'hasSpecialOffer': hasSpecialOffer,
     };
   }
 
@@ -72,6 +87,11 @@ class Store extends User {
       openingHours: OperatingHours.fromMap(map['openingHours'] as Map<String, dynamic>),
       isOpen: map['isOpen'] as bool,
       bannerUrl: map['bannerUrl'] as String?,
+      description: map['description'] as String?,
+      deliveryFee: (map['deliveryFee'] as num).toDouble(),
+      deliveryTime: map['deliveryTime'] as int,
+      specialOffer: map['specialOffer'] as String?,
+      hasSpecialOffer: map['hasSpecialOffer'] as bool? ?? false,
     );
   }
 
@@ -93,6 +113,11 @@ class Store extends User {
     OperatingHours? openingHours,
     bool? isOpen,
     String? bannerUrl,
+    String? description,
+    double? deliveryFee,
+    int? deliveryTime,
+    String? specialOffer,
+    bool? hasSpecialOffer,
   }) {
     final userCopy = super.copyWith(
       id: id,
@@ -121,6 +146,11 @@ class Store extends User {
       openingHours: openingHours ?? this.openingHours,
       isOpen: isOpen ?? this.isOpen,
       bannerUrl: bannerUrl ?? this.bannerUrl,
+      description: description ?? this.description,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      deliveryTime: deliveryTime ?? this.deliveryTime,
+      specialOffer: specialOffer ?? this.specialOffer,
+      hasSpecialOffer: hasSpecialOffer ?? this.hasSpecialOffer,
     );
   }
 }

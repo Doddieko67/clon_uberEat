@@ -1,155 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
+import '../../models/store_model.dart';
+import '../../models/menu_item_model.dart';
+import '../../providers/store_provider.dart';
+import '../../providers/cart_provider.dart';
 
-class StoreDetailScreen extends StatefulWidget {
+class StoreDetailScreen extends ConsumerStatefulWidget {
   @override
   _StoreDetailScreenState createState() => _StoreDetailScreenState();
 }
 
-class _StoreDetailScreenState extends State<StoreDetailScreen>
+class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchController = TextEditingController();
-  Map<String, int> _cartItems = {}; // productId -> quantity
-
-  // Datos simulados de productos por categoría
-  final Map<String, List<Map<String, dynamic>>> _products = {
-    'Populares': [
-      {
-        'id': 'pop1',
-        'name': 'Tacos de Pastor',
-        'description':
-            'Deliciosos tacos con carne de pastor, piña, cebolla y cilantro',
-        'price': 45.0,
-        'originalPrice': 55.0,
-        'image': Icons.lunch_dining,
-        'isPopular': true,
-        'preparationTime': '10-15 min',
-        'calories': 320,
-        'ingredients': [
-          'Carne de pastor',
-          'Tortilla',
-          'Piña',
-          'Cebolla',
-          'Cilantro',
-        ],
-      },
-      {
-        'id': 'pop2',
-        'name': 'Quesadilla Especial',
-        'description':
-            'Quesadilla gigante con queso oaxaca, champiñones y pollo',
-        'price': 65.0,
-        'originalPrice': null,
-        'image': Icons.local_dining,
-        'isPopular': true,
-        'preparationTime': '8-12 min',
-        'calories': 580,
-        'ingredients': ['Tortilla', 'Queso Oaxaca', 'Pollo', 'Champiñones'],
-      },
-    ],
-    'Tacos': [
-      {
-        'id': 'taco1',
-        'name': 'Tacos de Carnitas',
-        'description': 'Tacos con carnitas de cerdo, cebolla y salsa verde',
-        'price': 42.0,
-        'originalPrice': null,
-        'image': Icons.lunch_dining,
-        'isPopular': false,
-        'preparationTime': '8-12 min',
-        'calories': 290,
-        'ingredients': ['Carnitas', 'Tortilla', 'Cebolla', 'Salsa verde'],
-      },
-      {
-        'id': 'taco2',
-        'name': 'Tacos de Pollo',
-        'description': 'Tacos de pollo a la plancha con guacamole',
-        'price': 38.0,
-        'originalPrice': null,
-        'image': Icons.lunch_dining,
-        'isPopular': false,
-        'preparationTime': '10-15 min',
-        'calories': 250,
-        'ingredients': ['Pollo', 'Tortilla', 'Guacamole', 'Lechuga'],
-      },
-      {
-        'id': 'taco3',
-        'name': 'Tacos Vegetarianos',
-        'description': 'Tacos con frijoles, aguacate, queso y verduras',
-        'price': 35.0,
-        'originalPrice': null,
-        'image': Icons.lunch_dining,
-        'isPopular': false,
-        'preparationTime': '5-10 min',
-        'calories': 220,
-        'ingredients': ['Frijoles', 'Aguacate', 'Queso', 'Verduras'],
-      },
-    ],
-    'Quesadillas': [
-      {
-        'id': 'ques1',
-        'name': 'Quesadilla de Queso',
-        'description': 'Quesadilla tradicional con queso derretido',
-        'price': 35.0,
-        'originalPrice': null,
-        'image': Icons.local_dining,
-        'isPopular': false,
-        'preparationTime': '5-8 min',
-        'calories': 380,
-        'ingredients': ['Tortilla', 'Queso'],
-      },
-      {
-        'id': 'ques2',
-        'name': 'Quesadilla de Jamón',
-        'description': 'Quesadilla con jamón y queso amarillo',
-        'price': 45.0,
-        'originalPrice': null,
-        'image': Icons.local_dining,
-        'isPopular': false,
-        'preparationTime': '8-10 min',
-        'calories': 420,
-        'ingredients': ['Tortilla', 'Jamón', 'Queso amarillo'],
-      },
-    ],
-    'Bebidas': [
-      {
-        'id': 'beb1',
-        'name': 'Agua de Horchata',
-        'description': 'Refrescante agua de horchata con canela',
-        'price': 25.0,
-        'originalPrice': null,
-        'image': Icons.local_drink,
-        'isPopular': false,
-        'preparationTime': '2-5 min',
-        'calories': 150,
-        'ingredients': ['Arroz', 'Canela', 'Azúcar', 'Leche'],
-      },
-      {
-        'id': 'beb2',
-        'name': 'Agua de Jamaica',
-        'description': 'Agua fresca de jamaica natural',
-        'price': 20.0,
-        'originalPrice': null,
-        'image': Icons.local_drink,
-        'isPopular': false,
-        'preparationTime': '2-5 min',
-        'calories': 80,
-        'ingredients': ['Flor de Jamaica', 'Azúcar', 'Agua'],
-      },
-    ],
-  };
+  Store? _store;
+  List<String> _categories = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _products.keys.length, vsync: this);
-
-    // Listener para detectar cambios de tab
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
+    
+    // Obtener store de los argumentos
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Store) {
         setState(() {
-          // Actualizar cuando cambie el tab
+          _store = args;
+          _categories = ref.read(categoriesForStoreProvider(args.id));
+          _tabController = TabController(length: _categories.length, vsync: this);
         });
       }
     });
@@ -162,14 +42,74 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     super.dispose();
   }
 
-  void _addToCart(String productId) {
-    setState(() {
-      _cartItems[productId] = (_cartItems[productId] ?? 0) + 1;
-    });
+  void _addToCart(MenuItem menuItem) {
+    if (_store != null) {
+      final cartNotifier = ref.read(cartProvider.notifier);
+      
+      // Verificar si el carrito es de otra tienda
+      if (!cartNotifier.canAddItemFromStore(_store!.id)) {
+        _showStoreChangeDialog(() {
+          cartNotifier.clearCartForNewStore(_store!);
+          cartNotifier.addItem(menuItem);
+          _showSuccessSnackBar('Producto agregado al carrito');
+        });
+      } else {
+        cartNotifier.setStore(_store!);
+        cartNotifier.addItem(menuItem);
+        _showSuccessSnackBar('Producto agregado al carrito');
+      }
+    }
+  }
 
+  void _incrementItem(MenuItem menuItem) {
+    final cartNotifier = ref.read(cartProvider.notifier);
+    cartNotifier.addItem(menuItem);
+  }
+
+  void _decrementItem(String menuItemId) {
+    final cartNotifier = ref.read(cartProvider.notifier);
+    final cartItem = cartNotifier.getCartItem(menuItemId);
+    if (cartItem != null) {
+      cartNotifier.decrementItem(cartItem.id);
+    }
+  }
+
+  void _showStoreChangeDialog(VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: Text(
+            'Cambiar restaurante',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+          content: Text(
+            'Tu carrito actual será vaciado. ¿Deseas continuar?',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onConfirm();
+              },
+              child: Text('Continuar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Producto agregado al carrito'),
+        content: Text(message),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 1),
@@ -177,76 +117,75 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     );
   }
 
-  void _removeFromCart(String productId) {
-    setState(() {
-      if (_cartItems[productId] != null && _cartItems[productId]! > 0) {
-        _cartItems[productId] = _cartItems[productId]! - 1;
-        if (_cartItems[productId] == 0) {
-          _cartItems.remove(productId);
-        }
-      }
-    });
+  IconData _getIconForCategory(String category) {
+    switch (category) {
+      case 'Populares':
+        return Icons.local_fire_department;
+      case 'Tacos':
+        return Icons.lunch_dining;
+      case 'Quesadillas':
+        return Icons.local_dining;
+      case 'Bebidas':
+        return Icons.local_drink;
+      default:
+        return Icons.restaurant_menu;
+    }
   }
 
-  int get _totalItems {
-    return _cartItems.values.fold(0, (sum, quantity) => sum + quantity);
-  }
-
-  double get _totalPrice {
-    double total = 0.0;
-    _cartItems.forEach((productId, quantity) {
-      // Buscar el producto en todas las categorías
-      for (var category in _products.values) {
-        final product = category.firstWhere(
-          (p) => p['id'] == productId,
-          orElse: () => {},
-        );
-        if (product.isNotEmpty) {
-          total += product['price'] * quantity;
-          break;
-        }
-      }
-    });
-    return total;
+  IconData _getStoreIcon(String category) {
+    switch (category) {
+      case 'Mexicana':
+        return Icons.restaurant;
+      case 'Italiana':
+        return Icons.local_pizza;
+      case 'Asiática':
+        return Icons.set_meal;
+      case 'Saludable':
+        return Icons.eco;
+      case 'Postres':
+        return Icons.cake;
+      case 'Bebidas':
+        return Icons.local_drink;
+      case 'Americana':
+        return Icons.lunch_dining;
+      default:
+        return Icons.restaurant;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic>? storeData =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
-    if (storeData == null) {
+    if (_store == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: Text('Error'),
+          title: Text('Cargando...'),
           backgroundColor: AppColors.surface,
         ),
         body: Center(
-          child: Text(
-            'No se pudieron cargar los datos de la tienda',
-            style: TextStyle(color: AppColors.textPrimary),
-          ),
+          child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
     }
+
+    final cartItemsCount = ref.watch(cartItemsCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(storeData),
-          _buildStoreInfo(storeData),
+          _buildSliverAppBar(),
+          _buildStoreInfo(),
           _buildSearchBar(),
-          _buildTabBar(),
+          if (_categories.isNotEmpty) _buildTabBar(),
           _buildProductsList(),
         ],
       ),
-      bottomNavigationBar: _totalItems > 0 ? _buildCartBottomBar() : null,
+      bottomNavigationBar: cartItemsCount > 0 ? _buildCartBottomBar() : null,
     );
   }
 
-  Widget _buildSliverAppBar(Map<String, dynamic> storeData) {
+  Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 200,
       pinned: true,
@@ -282,7 +221,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
           decoration: BoxDecoration(gradient: AppGradients.secondary),
           child: Center(
             child: Icon(
-              storeData['image'],
+              _getStoreIcon(_store!.category),
               size: 80,
               color: AppColors.textOnSecondary,
             ),
@@ -292,7 +231,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     );
   }
 
-  Widget _buildStoreInfo(Map<String, dynamic> storeData) {
+  Widget _buildStoreInfo() {
     return SliverToBoxAdapter(
       child: Container(
         margin: EdgeInsets.all(20),
@@ -319,7 +258,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        storeData['name'],
+                        _store!.storeName,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -328,7 +267,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                       ),
                       SizedBox(height: 4),
                       Text(
-                        storeData['description'],
+                        _store!.description ?? 'Restaurante en ${_store!.category}',
                         style: TextStyle(
                           fontSize: 16,
                           color: AppColors.textSecondary,
@@ -340,13 +279,13 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: storeData['isOpen']
+                    color: _store!.isOpen
                         ? AppColors.success
                         : AppColors.error,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    storeData['isOpen'] ? 'Abierto' : 'Cerrado',
+                    _store!.isOpen ? 'Abierto' : 'Cerrado',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -363,29 +302,29 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               children: [
                 _buildInfoChip(
                   Icons.star,
-                  '${storeData['rating']}',
+                  '${_store!.rating}',
                   AppColors.warning,
                 ),
                 SizedBox(width: 12),
                 _buildInfoChip(
                   Icons.access_time,
-                  storeData['deliveryTime'],
+                  '${_store!.deliveryTime} min',
                   AppColors.textSecondary,
                 ),
                 SizedBox(width: 12),
                 _buildInfoChip(
                   Icons.delivery_dining,
-                  storeData['deliveryFee'] == 0
+                  _store!.deliveryFee == 0
                       ? 'Gratis'
-                      : '\$${storeData['deliveryFee']}',
-                  storeData['deliveryFee'] == 0
+                      : '\$${_store!.deliveryFee.toInt()}',
+                  _store!.deliveryFee == 0
                       ? AppColors.success
                       : AppColors.textSecondary,
                 ),
               ],
             ),
 
-            if (storeData['specialOffer'] != null) ...[
+            if (_store!.hasSpecialOffer && _store!.specialOffer != null) ...[
               SizedBox(height: 16),
               Container(
                 width: double.infinity,
@@ -400,7 +339,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     Icon(Icons.local_offer, size: 16, color: AppColors.primary),
                     SizedBox(width: 8),
                     Text(
-                      storeData['specialOffer'],
+                      _store!.specialOffer!,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -490,31 +429,52 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
             fontWeight: FontWeight.w400,
             fontSize: 14,
           ),
-          tabs: _products.keys.map((category) => Tab(text: category)).toList(),
+          tabs: _categories.map((category) => Tab(text: category)).toList(),
         ),
       ),
     );
   }
 
   Widget _buildProductsList() {
-    // SOLUCIÓN: Eliminar TabBarView completamente y usar solo SliverList
-    final selectedCategory = _products.keys.elementAt(_tabController.index);
-    final allProducts = _products[selectedCategory] ?? [];
+    if (_store == null || _categories.isEmpty) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: Column(
+            children: [
+              Icon(Icons.restaurant_menu, size: 64, color: AppColors.textTertiary),
+              SizedBox(height: 16),
+              Text(
+                'Sin menú disponible',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final selectedCategory = _categories[_tabController.index];
+    
+    // Usar provider para obtener los productos filtrados
+    final allProducts = ref.watch(menuByCategoryProvider((
+      storeId: _store!.id,
+      category: selectedCategory,
+    )));
 
     // Filtrar por búsqueda
     final products = _searchController.text.isEmpty
         ? allProducts
-        : allProducts
-              .where(
-                (product) =>
-                    product['name'].toLowerCase().contains(
-                      _searchController.text.toLowerCase(),
-                    ) ||
-                    product['description'].toLowerCase().contains(
-                      _searchController.text.toLowerCase(),
-                    ),
-              )
-              .toList();
+        : allProducts.where((product) =>
+            product.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+            product.description.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+            product.ingredients?.any((ingredient) => 
+              ingredient.toLowerCase().contains(_searchController.text.toLowerCase())) == true
+          ).toList();
 
     if (products.isEmpty && _searchController.text.isNotEmpty) {
       return SliverToBoxAdapter(
@@ -549,7 +509,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
 
         final product = products[index];
         final isLast = index == products.length - 1;
-        final extraBottomPadding = isLast && _totalItems > 0 ? 100.0 : 0.0;
+        final cartItemsCount = ref.watch(cartItemsCountProvider);
+        final extraBottomPadding = isLast && cartItemsCount > 0 ? 100.0 : 0.0;
 
         return Container(
           margin: EdgeInsets.only(
@@ -564,8 +525,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product) {
-    final quantity = _cartItems[product['id']] ?? 0;
+  Widget _buildProductCard(MenuItem product) {
+    final quantity = ref.watch(cartItemQuantityProvider(product.id));
 
     return Container(
       decoration: BoxDecoration(
@@ -595,7 +556,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  product['image'],
+                  _getIconForCategory(product.category),
                   color: AppColors.textOnPrimary,
                   size: 40,
                 ),
@@ -608,7 +569,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (product['isPopular']) ...[
+                    if (product.isPopular) ...[
                       Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: 6,
@@ -630,7 +591,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                       SizedBox(height: 10),
                     ],
                     Text(
-                      product['name'],
+                      product.name,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -641,7 +602,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     SizedBox(height: 4),
 
                     Text(
-                      product['description'],
+                      product.description,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -652,18 +613,19 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
 
                     SizedBox(height: 8),
 
-                    Text(
-                      '${product['preparationTime']}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                        fontWeight: FontWeight.w200,
+                    if (product.preparationTime != null)
+                      Text(
+                        '${product.preparationTime} min',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                          fontWeight: FontWeight.w200,
+                        ),
                       ),
-                    ),
                     Row(
                       children: [
                         Text(
-                          '\$${product['price'].toStringAsFixed(0)}',
+                          '\$${product.price.toStringAsFixed(0)}',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w100,
@@ -671,10 +633,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                           ),
                         ),
 
-                        if (product['originalPrice'] != null) ...[
+                        if (product.hasDiscount) ...[
                           SizedBox(width: 8),
                           Text(
-                            '\$${product['originalPrice'].toStringAsFixed(0)}',
+                            '\$${product.originalPrice!.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textTertiary,
@@ -693,7 +655,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               // Add to Cart Button
               quantity == 0
                   ? ElevatedButton(
-                      onPressed: () => _addToCart(product['id']),
+                      onPressed: () => _addToCart(product),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
@@ -723,7 +685,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: () => _removeFromCart(product['id']),
+                            onPressed: () => _decrementItem(product.id),
                             icon: Icon(
                               Icons.remove,
                               color: AppColors.primary,
@@ -742,7 +704,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                             ),
                           ),
                           IconButton(
-                            onPressed: () => _addToCart(product['id']),
+                            onPressed: () => _incrementItem(product),
                             icon: Icon(
                               Icons.add,
                               color: AppColors.primary,
@@ -764,6 +726,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
   }
 
   Widget _buildCartBottomBar() {
+    final cartItemsCount = ref.watch(cartItemsCountProvider);
+    final cartTotal = ref.watch(cartTotalProvider);
+    
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -784,14 +749,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$_totalItems ${_totalItems == 1 ? 'producto' : 'productos'}',
+                  '$cartItemsCount ${cartItemsCount == 1 ? 'producto' : 'productos'}',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
                   ),
                 ),
                 Text(
-                  '\$${_totalPrice.toStringAsFixed(0)}',
+                  '\$${cartTotal.toStringAsFixed(0)}',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -836,7 +801,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
     );
   }
 
-  void _showProductDetail(Map<String, dynamic> product) {
+  void _showProductDetail(MenuItem product) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -876,7 +841,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Icon(
-                    product['image'],
+                    _getIconForCategory(product.category),
                     color: AppColors.textOnPrimary,
                     size: 60,
                   ),
@@ -887,7 +852,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
 
               // Product name and price
               Text(
-                product['name'],
+                product.name,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -898,7 +863,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               SizedBox(height: 8),
 
               Text(
-                product['description'],
+                product.description,
                 style: TextStyle(
                   fontSize: 16,
                   color: AppColors.textSecondary,
@@ -911,7 +876,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               Row(
                 children: [
                   Text(
-                    '\$${product['price'].toStringAsFixed(0)}',
+                    '\$${product.price.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -919,10 +884,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     ),
                   ),
 
-                  if (product['originalPrice'] != null) ...[
+                  if (product.hasDiscount) ...[
                     SizedBox(width: 12),
                     Text(
-                      '\$${product['originalPrice'].toStringAsFixed(0)}',
+                      '\$${product.originalPrice!.toStringAsFixed(0)}',
                       style: TextStyle(
                         fontSize: 18,
                         color: AppColors.textTertiary,
@@ -940,7 +905,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${product['calories']} cal',
+                      product.calories != null ? '${product.calories} cal' : 'N/A cal',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -967,7 +932,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: (product['ingredients'] as List<String>)
+                children: (product.ingredients ?? [])
                     .map(
                       (ingredient) => Container(
                         padding: EdgeInsets.symmetric(
@@ -997,7 +962,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    _addToCart(product['id']);
+                    _addToCart(product);
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -1008,7 +973,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen>
                     ),
                   ),
                   child: Text(
-                    'Agregar al carrito - \$${product['price'].toStringAsFixed(0)}',
+                    'Agregar al carrito - \$${product.price.toStringAsFixed(0)}',
                     style: TextStyle(
                       color: AppColors.textOnPrimary,
                       fontSize: 16,
