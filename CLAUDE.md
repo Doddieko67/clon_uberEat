@@ -19,6 +19,9 @@
 - **Checkout Real**: Conectado con carrito real, muestra productos reales
 - **Order Creation**: Crea órdenes reales en Firestore al confirmar pedido
 - **Cart Integration**: Precios, descuentos y totales desde carrito
+- **Order Tracking**: Conectado con órdenes reales desde Firestore
+- **Real-time Status**: Muestra estado real de órdenes (Pendiente → Preparando → En camino → Entregado)
+- **Dynamic Timeline**: Timeline de tracking basado en estado real de la orden
 
 ### 🔧 Current Behavior:
 - **Botón "-"**: Solo funciona si cantidad > 1
@@ -28,6 +31,9 @@
 - **Checkout**: Muestra productos del carrito real con precios correctos
 - **Confirmar Pedido**: Crea orden en Firestore y limpia carrito
 - **Order Flow**: Navega a tracking con ID de orden real
+- **Order Tracking**: Muestra estado real con timeline dinámico
+- **Firestore Integration**: Órdenes almacenadas y consultadas en tiempo real
+- **Status Updates**: Actualización automática del estado cada 30 segundos
 
 ### Testing Commands:
 ```bash

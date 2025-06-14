@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
+import '../../providers/order_provider.dart';
+import '../../models/order_model.dart';
 
-class OrderTrackingScreen extends StatefulWidget {
+class OrderTrackingScreen extends ConsumerStatefulWidget {
   @override
   _OrderTrackingScreenState createState() => _OrderTrackingScreenState();
 }
 
-class _OrderTrackingScreenState extends State<OrderTrackingScreen>
+class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _progressController;
@@ -15,57 +18,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   late Animation<double> _progressAnimation;
 
   Timer? _statusTimer;
-  int _currentStep = 0;
+  String? _orderId;
+  Order? _currentOrder;
 
-  // Datos simulados del pedido
-  final String _orderNumber =
-      '#CMP${DateTime.now().millisecondsSinceEpoch % 10000}';
-  final String _storeName = 'Cafetería Central';
-  final String _estimatedTime = '15-25 min';
-
-  final List<Map<String, dynamic>> _orderItems = [
-    {'name': 'Tacos de Pastor', 'quantity': 2, 'price': 45.0},
-    {'name': 'Quesadilla Especial', 'quantity': 1, 'price': 65.0},
-    {'name': 'Agua de Horchata', 'quantity': 2, 'price': 25.0},
-  ];
-
-  final List<Map<String, dynamic>> _trackingSteps = [
-    {
-      'title': 'Pedido confirmado',
-      'subtitle': 'Tu pedido ha sido recibido',
-      'icon': Icons.check_circle,
-      'time': '14:32',
-      'isCompleted': true,
-    },
-    {
-      'title': 'Preparando tu pedido',
-      'subtitle': 'La cocina está preparando tu comida',
-      'icon': Icons.restaurant,
-      'time': '14:35',
-      'isCompleted': true,
-    },
-    {
-      'title': 'Pedido listo',
-      'subtitle': 'Tu pedido está listo para recoger',
-      'icon': Icons.done_all,
-      'time': '14:48',
-      'isCompleted': true,
-    },
-    {
-      'title': 'En camino',
-      'subtitle': 'El repartidor va hacia tu ubicación',
-      'icon': Icons.delivery_dining,
-      'time': '14:50',
-      'isCompleted': false,
-    },
-    {
-      'title': 'Entregado',
-      'subtitle': 'Tu pedido ha sido entregado',
-      'icon': Icons.home,
-      'time': '',
-      'isCompleted': false,
-    },
-  ];
+  List<Map<String, dynamic>> _getTrackingSteps(Order? order) {
+    if (order == null) return [];
+    
+    final steps = [
+      {
+        'title': 'Pedido confirmado',
+        'subtitle': 'Tu pedido ha sido recibido',
+        'icon': Icons.check_circle,
+        'time': _formatTime(order.orderTime),
+        'isCompleted': true,
+        'status': OrderStatus.pending,
+      },
+      {
+        'title': 'Preparando tu pedido',
+        'subtitle': 'La cocina está preparando tu comida',
+        'icon': Icons.restaurant,
+        'time': order.status.index >= 1 ? _formatTime(order.orderTime.add(Duration(minutes: 3))) : '',
+        'isCompleted': order.status.index >= 1,
+        'status': OrderStatus.preparing,
+      },
+      {
+        'title': 'En camino',
+        'subtitle': 'El repartidor va hacia tu ubicación',
+        'icon': Icons.delivery_dining,
+        'time': order.status.index >= 2 ? _formatTime(order.orderTime.add(Duration(minutes: 15))) : '',
+        'isCompleted': order.status.index >= 2,
+        'status': OrderStatus.outForDelivery,
+      },
+      {
+        'title': 'Entregado',
+        'subtitle': 'Tu pedido ha sido entregado',
+        'icon': Icons.home,
+        'time': order.status == OrderStatus.delivered && order.deliveryTime != null 
+            ? _formatTime(order.deliveryTime!) 
+            : '',
+        'isCompleted': order.status == OrderStatus.delivered,
+        'status': OrderStatus.delivered,
+      },
+    ];
+    
+    if (order.status == OrderStatus.cancelled) {
+      steps.add({
+        'title': 'Pedido cancelado',
+        'subtitle': 'El pedido ha sido cancelado',
+        'icon': Icons.cancel,
+        'time': _formatTime(DateTime.now()),
+        'isCompleted': true,
+        'status': OrderStatus.cancelled,
+      });
+    }
+    
+    return steps;
+  }
+  
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+  
+  String _getStatusText(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return 'Confirmado';
+      case OrderStatus.preparing:
+        return 'Preparando';
+      case OrderStatus.outForDelivery:
+        return 'En camino';
+      case OrderStatus.delivered:
+        return 'Entregado';
+      case OrderStatus.cancelled:
+        return 'Cancelado';
+    }
+  }
+  
+  int _getCurrentStep(Order? order) {
+    if (order == null) return 0;
+    switch (order.status) {
+      case OrderStatus.pending:
+        return 0;
+      case OrderStatus.preparing:
+        return 1;
+      case OrderStatus.outForDelivery:
+        return 2;
+      case OrderStatus.delivered:
+        return 3;
+      case OrderStatus.cancelled:
+        return 4;
+    }
+  }
 
   // Datos del repartidor
   final Map<String, dynamic> _deliveryPerson = {
@@ -82,7 +125,41 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     super.initState();
     _setupAnimations();
     _setupStatusTimer();
-    _currentStep = 3; // Actualmente "En camino"
+    
+    // Obtener orderId de los argumentos de navegación
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String) {
+        setState(() {
+          _orderId = args;
+        });
+        _loadOrder();
+      }
+    });
+  }
+  
+  void _loadOrder() async {
+    if (_orderId == null) return;
+    
+    final orders = ref.read(ordersProvider);
+    orders.whenData((ordersList) {
+      final order = ordersList.firstWhere(
+        (o) => o.id == _orderId,
+        orElse: () => Order(
+          id: _orderId!,
+          customerId: 'unknown',
+          storeId: 'unknown',
+          items: [],
+          totalAmount: 0,
+          status: OrderStatus.pending,
+          deliveryAddress: 'Dirección no disponible',
+          orderTime: DateTime.now(),
+        ),
+      );
+      setState(() {
+        _currentOrder = order;
+      });
+    });
   }
 
   void _setupAnimations() {
@@ -109,23 +186,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   }
 
   void _setupStatusTimer() {
-    // Simular actualizaciones de estado cada 10 segundos
-    _statusTimer = Timer.periodic(Duration(seconds: 10), (timer) {
-      if (_currentStep < _trackingSteps.length - 1 && mounted) {
-        setState(() {
-          _trackingSteps[_currentStep]['isCompleted'] = true;
-          _currentStep++;
-          if (_currentStep < _trackingSteps.length) {
-            _trackingSteps[_currentStep]['time'] =
-                '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-          }
-        });
-
-        if (_currentStep == _trackingSteps.length - 1) {
-          // Pedido entregado
-          timer.cancel();
-          _showDeliveryConfirmation();
-        }
+    // Timer para actualizar automáticamente el estado del pedido
+    // Los datos reales vienen de Firestore, pero podemos simular cambios para demo
+    _statusTimer = Timer.periodic(Duration(seconds: 30), (timer) {
+      // En una app real, esto sería controlado por el backend
+      // Por ahora solo refrescamos los datos
+      if (mounted) {
+        ref.refresh(ordersProvider);
       }
     });
   }
@@ -248,24 +315,96 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOrderHeader(),
-            SizedBox(height: 24),
-            _buildMapSection(),
-            SizedBox(height: 24),
-            _buildTrackingTimeline(),
-            SizedBox(height: 24),
-            if (_currentStep == 3) _buildDeliveryPersonInfo(),
-            if (_currentStep == 3) SizedBox(height: 24),
-            _buildOrderSummary(),
-            SizedBox(height: 24),
-            _buildContactButtons(),
-          ],
-        ),
+      body: Consumer(
+        builder: (context, ref, _) {
+          final ordersAsync = ref.watch(ordersProvider);
+          
+          return ordersAsync.when(
+            loading: () => Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: AppColors.error, size: 64),
+                  SizedBox(height: 16),
+                  Text(
+                    'Error al cargar el pedido',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    error.toString(),
+                    style: TextStyle(color: AppColors.textSecondary),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+            data: (orders) {
+              // Buscar la orden actual
+              if (_orderId != null && _currentOrder == null) {
+                final order = orders.firstWhere(
+                  (o) => o.id == _orderId,
+                  orElse: () => Order(
+                    id: _orderId!,
+                    customerId: 'unknown',
+                    storeId: 'unknown',
+                    items: [],
+                    totalAmount: 0,
+                    status: OrderStatus.pending,
+                    deliveryAddress: 'Dirección no disponible',
+                    orderTime: DateTime.now(),
+                  ),
+                );
+                _currentOrder = order;
+              }
+              
+              if (_currentOrder == null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off, color: AppColors.textTertiary, size: 64),
+                      SizedBox(height: 16),
+                      Text(
+                        'Pedido no encontrado',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'No se pudo encontrar la información del pedido',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              final currentStep = _getCurrentStep(_currentOrder);
+              final trackingSteps = _getTrackingSteps(_currentOrder);
+              
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildOrderHeader(_currentOrder!),
+                    SizedBox(height: 24),
+                    _buildMapSection(currentStep),
+                    SizedBox(height: 24),
+                    _buildTrackingTimeline(trackingSteps, currentStep),
+                    SizedBox(height: 24),
+                    if (currentStep == 2) _buildDeliveryPersonInfo(),
+                    if (currentStep == 2) SizedBox(height: 24),
+                    _buildOrderSummary(_currentOrder!),
+                    SizedBox(height: 24),
+                    _buildContactButtons(),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -296,7 +435,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Widget _buildOrderHeader() {
+  Widget _buildOrderHeader(Order order) {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -319,7 +458,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pedido $_orderNumber',
+                    'Pedido #${order.id.substring(order.id.length - 8)}',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -328,7 +467,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'De: $_storeName',
+                    'Total: \$${order.totalAmount.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.textOnPrimary.withOpacity(0.9),
@@ -343,7 +482,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  _trackingSteps[_currentStep]['title'],
+                  _getStatusText(order.status),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -371,7 +510,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Widget _buildMapSection() {
+  Widget _buildMapSection(int currentStep) {
     return Container(
       height: 200,
       decoration: BoxDecoration(
@@ -398,7 +537,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             ),
 
             // Indicador de repartidor
-            if (_currentStep == 3)
+            if (currentStep == 2)
               Positioned(
                 top: 60,
                 left: 100,
@@ -468,9 +607,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _currentStep == 3
+                        currentStep == 2
                             ? _deliveryPerson['currentLocation']
-                            : 'Ubicación: $_storeName',
+                            : 'Preparando en la cocina',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textPrimary,
@@ -488,7 +627,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Widget _buildTrackingTimeline() {
+  Widget _buildTrackingTimeline(List<Map<String, dynamic>> trackingSteps, int currentStep) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -510,12 +649,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
           SizedBox(height: 20),
 
-          ..._trackingSteps.asMap().entries.map((entry) {
+          ...trackingSteps.asMap().entries.map((entry) {
             final index = entry.key;
             final step = entry.value;
-            final isActive = index == _currentStep;
+            final isActive = index == currentStep;
             final isCompleted = step['isCompleted'];
-            final isLast = index == _trackingSteps.length - 1;
+            final isLast = index == trackingSteps.length - 1;
 
             return IntrinsicHeight(
               child: Row(
@@ -744,7 +883,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Widget _buildOrderSummary() {
+  Widget _buildOrderSummary(Order order) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -766,7 +905,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
           SizedBox(height: 16),
 
-          ..._orderItems
+          ...order.items
               .map(
                 (item) => Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
@@ -775,7 +914,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                     children: [
                       Expanded(
                         child: Text(
-                          '${item['quantity']}x ${item['name']}',
+                          '${item.quantity}x ${item.productName}',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textPrimary,
@@ -783,7 +922,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         ),
                       ),
                       Text(
-                        '\$${(item['price'] * item['quantity']).toStringAsFixed(0)}',
+                        '\$${item.total.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -810,7 +949,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 ),
               ),
               Text(
-                '\$${_orderItems.fold(0.0, (sum, item) => sum + (item['price'] * item['quantity'])).toStringAsFixed(0)}',
+                '\$${order.totalAmount.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
