@@ -1,39 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/order_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../models/cart_item_model.dart';
+import '../../models/order_model.dart';
+import '../../models/order_item_model.dart';
 
-class CheckoutScreen extends StatefulWidget {
+class CheckoutScreen extends ConsumerStatefulWidget {
   @override
   _CheckoutScreenState createState() => _CheckoutScreenState();
 }
 
-class _CheckoutScreenState extends State<CheckoutScreen> {
+class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   int _selectedAddressIndex = 0;
   int _selectedPaymentIndex = 0;
   final _instructionsController = TextEditingController();
   bool _isProcessing = false;
   bool _shareLocationEnabled = false; // Nueva variable para GPS
 
-  // Datos simulados del pedido (en una app real vendría del carrito)
-  final List<Map<String, dynamic>> _orderItems = [
-    {
-      'name': 'Tacos de Pastor',
-      'quantity': 2,
-      'price': 45.0,
-      'image': Icons.lunch_dining,
-    },
-    {
-      'name': 'Quesadilla Especial',
-      'quantity': 1,
-      'price': 65.0,
-      'image': Icons.local_dining,
-    },
-    {
-      'name': 'Agua de Horchata',
-      'quantity': 2,
-      'price': 25.0,
-      'image': Icons.local_drink,
-    },
-  ];
+  // Los datos del pedido ahora vienen del carrito real
 
   final List<Map<String, dynamic>> _addresses = [
     {
@@ -89,13 +76,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     },
   ];
 
-  double get _subtotal => _orderItems.fold(
-    0.0,
-    (sum, item) => sum + (item['price'] * item['quantity']),
-  );
-  double get _deliveryFee => 0.0; // Gratis
-  double get _serviceFee => 5.0;
-  double get _total => _subtotal + _deliveryFee + _serviceFee;
+  // Los cálculos ahora usan el carrito real
+  IconData _getIconForCategory(String category) {
+    switch (category) {
+      case 'Populares':
+        return Icons.local_fire_department;
+      case 'Tacos':
+        return Icons.lunch_dining;
+      case 'Quesadillas':
+        return Icons.local_dining;
+      case 'Bebidas':
+        return Icons.local_drink;
+      default:
+        return Icons.restaurant_menu;
+    }
+  }
 
   @override
   void dispose() {
@@ -144,22 +139,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _processOrder() async {
+    final cart = ref.read(cartProvider);
+    final authState = ref.read(authNotifierProvider);
+    final ordersNotifier = ref.read(ordersProvider.notifier);
+    
+    if (cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('El carrito está vacío'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
     });
 
-    // Simular procesamiento del pedido
-    await Future.delayed(Duration(seconds: 3));
+    try {
+      // Crear la orden
+      final orderId = 'ORD_${DateTime.now().millisecondsSinceEpoch}';
+      final selectedAddress = _addresses[_selectedAddressIndex];
+      
+      // Convertir CartItems a OrderItems
+      final orderItems = cart.items.map((cartItem) => cartItem.toOrderItem()).toList();
+      
+      final order = Order(
+        id: orderId,
+        customerId: authState.user?.id ?? 'guest_user',
+        storeId: cart.storeId ?? '',
+        items: orderItems,
+        totalAmount: cart.total,
+        status: OrderStatus.pending,
+        deliveryAddress: '${selectedAddress['title']}\n${selectedAddress['address']}',
+        orderTime: DateTime.now(),
+      );
 
-    setState(() {
-      _isProcessing = false;
-    });
+      // Guardar la orden en Firestore
+      await ordersNotifier.addOrder(order);
+      
+      // Limpiar el carrito
+      final cartNotifier = ref.read(cartProvider.notifier);
+      cartNotifier.clearCart();
 
-    // Mostrar éxito y navegar
-    _showOrderConfirmation();
+      setState(() {
+        _isProcessing = false;
+      });
+
+      // Mostrar éxito y navegar
+      _showOrderConfirmation(orderId);
+      
+    } catch (e) {
+      setState(() {
+        _isProcessing = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al procesar el pedido: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
-  void _showOrderConfirmation() {
+  void _showOrderConfirmation(String orderId) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -202,7 +247,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 SizedBox(height: 12),
 
                 Text(
-                  'Tu pedido #CMP${DateTime.now().millisecondsSinceEpoch % 10000} ha sido enviado a la cocina.',
+                  'Tu pedido #${orderId.substring(orderId.length - 8)} ha sido enviado a la cocina.',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textSecondary,
@@ -231,6 +276,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         context,
                         '/customer-order-tracking',
                         (route) => false,
+                        arguments: orderId,
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -807,36 +853,108 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildOrderSummarySection() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.receipt_long, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Resumen del pedido',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+    return Consumer(
+      builder: (context, ref, _) {
+        final cart = ref.watch(cartProvider);
+        
+        if (cart.isEmpty) {
+          return Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(
+              'No hay productos en el carrito',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          );
+        }
+        
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.receipt_long, color: AppColors.primary, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Resumen del pedido',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
 
-          SizedBox(height: 16),
+              SizedBox(height: 16),
 
-          ..._orderItems
-              .map(
-                (item) => Container(
+              // Información de la tienda
+              if (cart.store != null) ...[
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryWithOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.secondary,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.store,
+                          color: AppColors.textOnSecondary,
+                          size: 16,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cart.store!.storeName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Tiempo estimado: ${cart.store!.deliveryTime}-${cart.store!.deliveryTime + 10} min',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
+              ],
+
+              // Items del carrito
+              ...cart.items.map(
+                (CartItem item) => Container(
                   margin: EdgeInsets.only(bottom: 12),
                   child: Row(
                     children: [
@@ -848,7 +966,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          item['image'],
+                          _getIconForCategory(item.menuItem.category),
                           color: AppColors.textOnPrimary,
                           size: 20,
                         ),
@@ -857,17 +975,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       SizedBox(width: 12),
 
                       Expanded(
-                        child: Text(
-                          item['name'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.menuItem.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (item.specialInstructions?.isNotEmpty == true)
+                              Text(
+                                'Nota: ${item.specialInstructions}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textTertiary,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
 
                       Text(
-                        '${item['quantity']}x',
+                        '${item.quantity}x',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.textSecondary,
@@ -877,7 +1010,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       SizedBox(width: 8),
 
                       Text(
-                        '\$${(item['price'] * item['quantity']).toStringAsFixed(0)}',
+                        '\$${item.total.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -887,10 +1020,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ],
                   ),
                 ),
-              )
-              .toList(),
-        ],
-      ),
+              ).toList(),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -950,53 +1084,78 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildPricingSummary() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryWithOpacity(0.3), width: 2),
-      ),
-      child: Column(
-        children: [
-          _buildPriceRow('Subtotal', '\$${_subtotal.toStringAsFixed(0)}'),
-          _buildPriceRow(
-            'Envío',
-            _deliveryFee == 0
-                ? 'Gratis'
-                : '\$${_deliveryFee.toStringAsFixed(0)}',
-            valueColor: _deliveryFee == 0 ? AppColors.success : null,
+    return Consumer(
+      builder: (context, ref, _) {
+        final cart = ref.watch(cartProvider);
+        
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primaryWithOpacity(0.3), width: 2),
           ),
-          _buildPriceRow(
-            'Tarifa de servicio',
-            '\$${_serviceFee.toStringAsFixed(0)}',
-          ),
-
-          Divider(color: AppColors.border, height: 24),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              Text(
-                'Total',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              _buildPriceRow(
+                'Subtotal (${cart.items.length} productos)',
+                '\$${cart.subtotal.toStringAsFixed(0)}',
               ),
-              Text(
-                '\$${_total.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+              
+              if (cart.totalSavings > 0)
+                _buildPriceRow(
+                  'Ahorros',
+                  '-\$${cart.totalSavings.toStringAsFixed(0)}',
+                  valueColor: AppColors.success,
                 ),
+              
+              if (cart.promoDiscount > 0)
+                _buildPriceRow(
+                  'Descuento promocional',
+                  '-\$${cart.promoDiscount.toStringAsFixed(0)}',
+                  valueColor: AppColors.success,
+                ),
+              
+              _buildPriceRow(
+                'Envío',
+                cart.deliveryFee == 0
+                    ? 'Gratis'
+                    : '\$${cart.deliveryFee.toStringAsFixed(0)}',
+                valueColor: cart.deliveryFee == 0 ? AppColors.success : null,
+              ),
+              
+              _buildPriceRow(
+                'Tarifa de servicio',
+                '\$${cart.serviceFee.toStringAsFixed(0)}',
+              ),
+
+              Divider(color: AppColors.border, height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '\$${cart.total.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1024,86 +1183,96 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildConfirmButton() {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.darkWithOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, -2),
+    return Consumer(
+      builder: (context, ref, _) {
+        final cart = ref.watch(cartProvider);
+        
+        return Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.darkWithOpacity(0.2),
+                blurRadius: 8,
+                offset: Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isProcessing ? null : _processOrder,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: (_isProcessing || cart.isEmpty) ? null : _processOrder,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isProcessing
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: AppColors.textOnPrimary,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Procesando pedido...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textOnPrimary,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              cart.isEmpty 
+                                  ? 'Carrito vacío'
+                                  : 'Confirmar pedido • \$${cart.total.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textOnPrimary,
+                              ),
+                            ),
+                            if (cart.isNotEmpty) ...[
+                              SizedBox(width: 8),
+                              Icon(
+                                Icons.check,
+                                color: AppColors.textOnPrimary,
+                                size: 20,
+                              ),
+                            ],
+                          ],
+                        ),
                 ),
               ),
-              child: _isProcessing
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: AppColors.textOnPrimary,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Text(
-                          'Procesando pedido...',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textOnPrimary,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Confirmar pedido • \$${_total.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textOnPrimary,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.check,
-                          color: AppColors.textOnPrimary,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-            ),
-          ),
 
-          SizedBox(height: 8),
+              SizedBox(height: 8),
 
-          Text(
-            'Al confirmar aceptas los términos y condiciones',
-            style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
-            textAlign: TextAlign.center,
+              Text(
+                'Al confirmar aceptas los términos y condiciones',
+                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -521,17 +521,13 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {
-                        if (item.quantity > 1) {
-                          final cartNotifier = ref.read(cartProvider.notifier);
-                          cartNotifier.decrementItem(item.id);
-                        } else {
-                          _removeItem(item.id);
-                        }
-                      },
+                      onPressed: item.quantity > 1 ? () {
+                        final cartNotifier = ref.read(cartProvider.notifier);
+                        cartNotifier.decrementItem(item.id);
+                      } : null,
                       icon: Icon(
                         Icons.remove,
-                        color: AppColors.primary,
+                        color: item.quantity > 1 ? AppColors.primary : AppColors.textTertiary,
                         size: 18,
                       ),
                       constraints: BoxConstraints(minWidth: 40, minHeight: 40),

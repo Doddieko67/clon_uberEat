@@ -1,19 +1,33 @@
 # UberEats Clone - Project Status
 
-## Cart Implementation Issues (2025-06-14)
+## Cart Implementation Updates (2025-06-14)
 
-### Problems Identified:
-1. **ID Confusion**: Cart uses both CartItem.id and MenuItem.id inconsistently
-2. **Character Encoding**: Some files have encoding issues (cart_provider.dart)
-3. **Logic Inconsistency**: Methods mix menuItemId and cartItemId lookups
-4. **UI Sync Issues**: Quantity buttons use wrong ID references
+### ✅ Issues Fixed:
+1. **ID Confusion**: Standardized CartItem.id vs MenuItem.id usage
+2. **Character Encoding**: Fixed encoding issues in cart_provider.dart
+3. **Logic Inconsistency**: Unified cart operations with proper ID references
+4. **UI Sync Issues**: Corrected quantity button operations
+5. **Reorder Functionality**: Implemented proper reorder from order history
+6. **Minimum Quantity**: Set minimum quantity to 1 (no auto-delete on decrement)
 
-### Solution Plan:
-1. Fix character encoding issues
-2. Standardize ID usage throughout cart operations
-3. Update UI to use correct ID references
-4. Add proper cart item lookup methods
-5. Implement cart persistence (optional)
+### ✅ New Features:
+- **Reorder Pedidos**: Funciona desde historial de pedidos
+- **Quantity Controls**: Mínimo 1, máximo 15 productos
+- **Visual Feedback**: Botón - se deshabilita en cantidad 1
+- **Store Validation**: Verifica compatibilidad entre tiendas
+- **Mock Items**: Crea items temporales para reordenar productos no disponibles
+- **Checkout Real**: Conectado con carrito real, muestra productos reales
+- **Order Creation**: Crea órdenes reales en Firestore al confirmar pedido
+- **Cart Integration**: Precios, descuentos y totales desde carrito
+
+### 🔧 Current Behavior:
+- **Botón "-"**: Solo funciona si cantidad > 1
+- **Botón "🗑️"**: Único método para eliminar productos
+- **Reordenar**: Agrega productos del pedido anterior al carrito
+- **Cambio de tienda**: Confirma antes de limpiar carrito
+- **Checkout**: Muestra productos del carrito real con precios correctos
+- **Confirmar Pedido**: Crea orden en Firestore y limpia carrito
+- **Order Flow**: Navega a tracking con ID de orden real
 
 ### Testing Commands:
 ```bash

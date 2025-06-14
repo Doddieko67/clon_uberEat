@@ -94,8 +94,8 @@ class Cart {
   }
 
   Cart updateItemQuantity(String itemId, int quantity) {
-    if (quantity <= 0) {
-      return removeItem(itemId);
+    if (quantity < 1) {
+      return this; // No actualizar si la cantidad es menor a 1
     }
 
     final updatedItems = items.map((item) {

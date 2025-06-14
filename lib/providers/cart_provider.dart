@@ -36,7 +36,9 @@ class CartNotifier extends StateNotifier<Cart> {
 
   void decrementItem(String itemId) {
     final item = state.items.firstWhere((item) => item.id == itemId);
-    updateItemQuantity(itemId, item.quantity - 1);
+    if (item.quantity > 1) {
+      updateItemQuantity(itemId, item.quantity - 1);
+    }
   }
 
   bool applyPromoCode(String code) {
@@ -114,7 +116,7 @@ class CartNotifier extends StateNotifier<Cart> {
   // Método mejorado para decrementar usando MenuItem ID
   void decrementItemByMenuId(String menuItemId) {
     final cartItem = getCartItemByMenuId(menuItemId);
-    if (cartItem != null) {
+    if (cartItem != null && cartItem.quantity > 1) {
       updateItemQuantity(cartItem.id, cartItem.quantity - 1);
     }
   }
