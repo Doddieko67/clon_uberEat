@@ -144,6 +144,11 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
           setState(() {
             _currentLocation = position;
           });
+          
+          // Actualizar ubicación en Firestore si hay un pedido activo
+          if (_orderId != null && _order?.status != OrderStatus.delivered) {
+            _updateLocationInFirestore(position.latitude, position.longitude);
+          }
         },
         onError: (error) {
           print('Error in location stream: $error');
@@ -184,6 +189,20 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+
+  void _updateLocationInFirestore(double latitude, double longitude) async {
+    if (_orderId == null) return;
+    
+    try {
+      await ref.read(ordersProvider.notifier).updateDelivererLocation(
+        _orderId!,
+        latitude,
+        longitude,
+      );
+    } catch (e) {
+      print('Error updating location in Firestore: $e');
     }
   }
 

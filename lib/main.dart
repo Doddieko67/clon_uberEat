@@ -56,7 +56,7 @@ class CampusEatsApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
 
         // Pantalla inicial
-        initialRoute: '/deliverer-dashboard',
+        initialRoute: '/store-dashboard',
 
         // Configuración de rutas
         routes: {

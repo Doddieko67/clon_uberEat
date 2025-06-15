@@ -61,6 +61,39 @@ class OrdersNotifier extends AsyncNotifier<List<Order>> {
     }
   }
 
+  // Update deliverer location
+  Future<void> updateDelivererLocation(
+    String orderId, 
+    double latitude, 
+    double longitude
+  ) async {
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'delivererLatitude': latitude,
+        'delivererLongitude': longitude,
+        'lastLocationUpdate': DateTime.now().toIso8601String(),
+      });
+      // State will be updated by the snapshot listener automatically
+    } catch (e) {
+      print('Error updating deliverer location: $e');
+      // Don't set loading state for location updates to avoid UI interruptions
+    }
+  }
+
+  // Assign deliverer to order
+  Future<void> assignDeliverer(String orderId, String delivererId) async {
+    state = const AsyncValue.loading();
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'delivererId': delivererId,
+        'status': OrderStatus.preparing.toString().split('.').last,
+      });
+      // State will be updated by the snapshot listener
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
   // Check if an order can be cancelled
   bool canCancelOrder(Order order) {
     // Solo se puede cancelar si está pendiente o preparando

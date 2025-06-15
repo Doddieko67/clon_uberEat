@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
+import 'store_analytics_screen.dart';
+import 'inventory_management_screen.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   @override
@@ -487,6 +489,53 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
                 () => Navigator.pushNamed(context, '/store-order-management'),
               ),
             ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                'Analytics',
+                Icons.analytics,
+                AppColors.success,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StoreAnalyticsScreen(storeId: 'store_001'),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionButton(
+                'Inventario',
+                Icons.inventory,
+                AppColors.warning,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InventoryManagementScreen(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                'Configuración',
+                Icons.settings,
+                AppColors.secondary,
+                () => Navigator.pushNamed(context, '/store-profile-settings'),
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(child: SizedBox()), // Espacio vacío
           ],
         ),
       ],

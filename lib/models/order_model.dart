@@ -28,6 +28,9 @@ class Order {
   final bool isPriority; // Priority flag for urgent orders
   final String? paymentMethod; // Payment method used
   final String? customerPhone; // Optional cached customer phone
+  final double? delivererLatitude; // Current deliverer latitude
+  final double? delivererLongitude; // Current deliverer longitude
+  final DateTime? lastLocationUpdate; // Last location update timestamp
 
   Order({
     required this.id,
@@ -48,6 +51,9 @@ class Order {
     this.isPriority = false,
     this.paymentMethod,
     this.customerPhone,
+    this.delivererLatitude,
+    this.delivererLongitude,
+    this.lastLocationUpdate,
   });
 
   Order copyWith({
@@ -69,6 +75,9 @@ class Order {
     bool? isPriority,
     String? paymentMethod,
     String? customerPhone,
+    double? delivererLatitude,
+    double? delivererLongitude,
+    DateTime? lastLocationUpdate,
   }) {
     return Order(
       id: id ?? this.id,
@@ -89,6 +98,9 @@ class Order {
       isPriority: isPriority ?? this.isPriority,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       customerPhone: customerPhone ?? this.customerPhone,
+      delivererLatitude: delivererLatitude ?? this.delivererLatitude,
+      delivererLongitude: delivererLongitude ?? this.delivererLongitude,
+      lastLocationUpdate: lastLocationUpdate ?? this.lastLocationUpdate,
     );
   }
 
@@ -112,6 +124,9 @@ class Order {
       'isPriority': isPriority,
       'paymentMethod': paymentMethod,
       'customerPhone': customerPhone,
+      'delivererLatitude': delivererLatitude,
+      'delivererLongitude': delivererLongitude,
+      'lastLocationUpdate': lastLocationUpdate?.toIso8601String(),
     };
   }
 
@@ -140,6 +155,11 @@ class Order {
       isPriority: map['isPriority'] as bool? ?? false,
       paymentMethod: map['paymentMethod'] as String?,
       customerPhone: map['customerPhone'] as String?,
+      delivererLatitude: map['delivererLatitude'] as double?,
+      delivererLongitude: map['delivererLongitude'] as double?,
+      lastLocationUpdate: map['lastLocationUpdate'] != null
+          ? DateTime.parse(map['lastLocationUpdate'] as String)
+          : null,
     );
   }
 }

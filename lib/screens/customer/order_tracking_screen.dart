@@ -4,6 +4,7 @@ import 'dart:async';
 import '../../theme/app_theme.dart';
 import '../../providers/order_provider.dart';
 import '../../models/order_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class OrderTrackingScreen extends ConsumerStatefulWidget {
   @override
@@ -670,8 +671,13 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   }
 
   Widget _buildMapSection(int currentStep) {
+    // Obtener ubicación del repartidor desde la orden actual
+    final delivererLat = _currentOrder?.delivererLatitude;
+    final delivererLng = _currentOrder?.delivererLongitude;
+    final lastUpdate = _currentOrder?.lastLocationUpdate;
+    
     return Container(
-      height: 200,
+      height: 250,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -681,73 +687,73 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
         borderRadius: BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Simulación de mapa
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppColors.surfaceVariant, AppColors.surface],
+            // Mapa real con ubicación del repartidor
+            if (delivererLat != null && delivererLng != null && currentStep >= 2)
+              GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(delivererLat, delivererLng),
+                  zoom: 15.0,
                 ),
-              ),
-              child: CustomPaint(painter: MapPainter()),
-            ),
-
-            // Indicador de repartidor
-            if (currentStep == 2)
-              Positioned(
-                top: 60,
-                left: 100,
-                child: AnimatedBuilder(
-                  animation: _pulseAnimation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _pulseAnimation.value,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.5),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.delivery_dining,
-                          color: AppColors.textOnPrimary,
-                          size: 20,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-            // Indicador de destino
-            Positioned(
-              bottom: 40,
-              right: 80,
-              child: Container(
-                width: 35,
-                height: 35,
+                markers: {
+                  // Marcador del repartidor
+                  Marker(
+                    markerId: MarkerId('deliverer'),
+                    position: LatLng(delivererLat, delivererLng),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                    infoWindow: InfoWindow(
+                      title: 'Tu repartidor',
+                      snippet: 'Ubicación actual',
+                    ),
+                  ),
+                  // Marcador de destino (dirección del cliente)
+                  Marker(
+                    markerId: MarkerId('destination'),
+                    position: LatLng(25.6866, -100.3161), // Coordenadas de ejemplo
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    infoWindow: InfoWindow(
+                      title: 'Tu ubicación',
+                      snippet: _currentOrder?.deliveryAddress ?? 'Dirección de entrega',
+                    ),
+                  ),
+                },
+                myLocationEnabled: false,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                mapToolbarEnabled: false,
+              )
+            else
+              // Mapa de placeholder cuando no hay ubicación del repartidor
+              Container(
+                width: double.infinity,
+                height: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppColors.secondary,
-                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.surfaceVariant, AppColors.surface],
+                  ),
                 ),
-                child: Icon(
-                  Icons.location_on,
-                  color: AppColors.textOnSecondary,
-                  size: 18,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      currentStep < 2 ? Icons.restaurant : Icons.map,
+                      size: 48,
+                      color: AppColors.textTertiary,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      currentStep < 2 
+                          ? 'Preparando tu pedido'
+                          : 'Esperando ubicación del repartidor',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
 
             // Información superpuesta
             Positioned(
@@ -760,22 +766,36 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                   color: AppColors.surface.withOpacity(0.95),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_on, color: AppColors.primary, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        currentStep == 2
-                            ? _deliveryPerson['currentLocation']
-                            : 'Preparando en la cocina',
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: AppColors.primary, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getLocationText(currentStep, delivererLat, delivererLng),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (lastUpdate != null && currentStep >= 2) ...[
+                      SizedBox(height: 4),
+                      Text(
+                        'Última actualización: ${_formatLastUpdate(lastUpdate)}',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -784,6 +804,29 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
         ),
       ),
     );
+  }
+
+  String _getLocationText(int currentStep, double? lat, double? lng) {
+    if (currentStep < 2) {
+      return 'Preparando en la cocina';
+    } else if (lat != null && lng != null) {
+      return 'Repartidor en camino - Ubicación en tiempo real';
+    } else {
+      return 'Esperando ubicación del repartidor...';
+    }
+  }
+
+  String _formatLastUpdate(DateTime lastUpdate) {
+    final now = DateTime.now();
+    final difference = now.difference(lastUpdate);
+    
+    if (difference.inMinutes < 1) {
+      return 'Hace ${difference.inSeconds}s';
+    } else if (difference.inMinutes < 60) {
+      return 'Hace ${difference.inMinutes}m';
+    } else {
+      return 'Hace ${difference.inHours}h';
+    }
   }
 
   Widget _buildTrackingTimeline(List<Map<String, dynamic>> trackingSteps, int currentStep) {
