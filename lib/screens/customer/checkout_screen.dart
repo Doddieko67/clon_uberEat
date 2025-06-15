@@ -168,12 +168,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final order = Order(
         id: orderId,
         customerId: authState.user?.id ?? 'guest_user',
+        customerName: authState.user?.name ?? 'Cliente',
         storeId: cart.storeId ?? '',
+        storeName: cart.store?.name ?? 'Tienda',
+        storeLocation: cart.store?.address ?? 'Ubicación de tienda',
         items: orderItems,
         totalAmount: cart.total,
         status: OrderStatus.pending,
         deliveryAddress: '${selectedAddress['title']}\n${selectedAddress['address']}',
         orderTime: DateTime.now(),
+        specialInstructions: _instructionsController.text.isNotEmpty ? _instructionsController.text : null,
+        isPriority: false, // TODO: Add priority logic based on delivery time or customer tier
+        paymentMethod: _paymentMethods[_selectedPaymentIndex]['name'] as String?,
+        customerPhone: authState.user?.phone,
       );
 
       // Guardar la orden en Firestore

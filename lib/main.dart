@@ -16,6 +16,7 @@ import 'package:clonubereat/screens/customer/store_detail_screen.dart';
 import 'package:clonubereat/screens/deliverer/deliverer_dashboard_screen.dart';
 import 'package:clonubereat/screens/deliverer/delivery_details_screen.dart';
 import 'package:clonubereat/screens/deliverer/delivery_history_screen.dart';
+import 'package:clonubereat/screens/deliverer/deliverer_location_screen.dart';
 import 'package:clonubereat/screens/store/menu_management_screen.dart';
 import 'package:clonubereat/screens/store/order_management_screen.dart';
 import 'package:clonubereat/screens/store/store_dashboard_screen.dart';
@@ -82,8 +83,7 @@ class CampusEatsApp extends StatelessWidget {
           // Rutas para Repartidor
           '/deliverer-dashboard': (context) => DelivererDashboardScreen(),
           '/deliverer-delivery-details': (context) => DeliveryDetailsScreen(),
-          '/deliverer-customer-location': (context) =>
-              DelivererDashboardScreen(), // Placeholder temporal
+          '/deliverer-customer-location': (context) => DelivererLocationScreen(),
           '/deliverer-history': (context) => DeliveryHistoryScreen(),
 
           // // Rutas para Admin

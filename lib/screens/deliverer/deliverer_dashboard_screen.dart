@@ -32,54 +32,6 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     'completionRate': 98.5,
   };
 
-  // Pedidos disponibles para recoger
-  List<Map<String, dynamic>> _availableOrders = [
-    {
-      'id': '#CMP1245',
-      'storeName': 'Cafetería Central',
-      'storeLocation': 'Edificio Principal - PB',
-      'customerName': 'Ana García',
-      'deliveryLocation': 'Biblioteca - Sala 3',
-      'items': 3,
-      'total': 165.0,
-      'distance': '300m',
-      'estimatedTime': '8 min',
-      'orderTime': DateTime.now().subtract(Duration(minutes: 5)),
-      'isPriority': true,
-      'paymentMethod': 'Tarjeta',
-    },
-    {
-      'id': '#CMP1246',
-      'storeName': 'Healthy Corner',
-      'storeLocation': 'Edificio B - Planta 1',
-      'customerName': 'Carlos Mendoza',
-      'deliveryLocation': 'Aula 301 - Edificio A',
-      'items': 2,
-      'total': 95.0,
-      'distance': '450m',
-      'estimatedTime': '12 min',
-      'orderTime': DateTime.now().subtract(Duration(minutes: 12)),
-      'isPriority': false,
-      'paymentMethod': 'Efectivo',
-    },
-  ];
-
-  // Entregas en progreso
-  List<Map<String, dynamic>> _activeDeliveries = [
-    {
-      'id': '#CMP1244',
-      'storeName': 'Pizza Campus',
-      'customerName': 'María López',
-      'deliveryLocation': 'Dormitorio - Cuarto 205',
-      'status': 'picked_up', // picked_up, delivering
-      'items': 4,
-      'total': 280.0,
-      'customerPhone': '+52 555 123 4567',
-      'estimatedTime': '6 min',
-      'acceptedTime': DateTime.now().subtract(Duration(minutes: 18)),
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -107,9 +59,8 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
 
-    if (_availableOrders.isNotEmpty) {
-      _pulseController.repeat(reverse: true);
-    }
+    // Animation will be controlled when orders are loaded
+    _pulseController.repeat(reverse: true);
 
     _slideController.forward();
   }
@@ -148,27 +99,37 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
 
     if (!_isAvailable) {
       _pulseController.stop();
-    } else if (_availableOrders.isNotEmpty) {
+    } else {
       _pulseController.repeat(reverse: true);
     }
   }
 
-  void _acceptOrder(String orderId) {
-    final orderIndex = _availableOrders.indexWhere((o) => o['id'] == orderId);
-    if (orderIndex != -1) {
-      final order = _availableOrders[orderIndex];
-      setState(() {
-        _availableOrders.removeAt(orderIndex);
-        _activeDeliveries.add({
-          ...order,
-          'status': 'accepted',
-          'acceptedTime': DateTime.now(),
-        });
-      });
+  void _acceptOrder(Order order) async {
+    try {
+      final authState = ref.read(authNotifierProvider);
+      final delivererId = authState.user?.id;
+      
+      if (delivererId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: No se pudo obtener el ID del repartidor'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      
+      // Update order with deliverer ID and change status to preparing
+      final updatedOrder = order.copyWith(
+        delivererId: delivererId,
+        status: OrderStatus.preparing,
+      );
+      
+      await ref.read(ordersProvider.notifier).updateOrder(updatedOrder);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Pedido $orderId aceptado'),
+          content: Text('Pedido ${order.id} aceptado'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -179,6 +140,13 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         context,
         '/deliverer-delivery-details',
         arguments: order,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al aceptar pedido: $e'),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
@@ -193,12 +161,53 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
 
   @override
   Widget build(BuildContext context) {
+    final ordersAsyncValue = ref.watch(ordersProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final currentUserId = authState.user?.id;
+    
+    return ordersAsyncValue.when(
+      data: (orders) {
+        return _buildScaffoldWithOrders(orders, currentUserId);
+      },
+      loading: () => Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
+      error: (error, stack) => Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error, size: 64, color: AppColors.error),
+              SizedBox(height: 16),
+              Text('Error al cargar pedidos: $error'),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.refresh(ordersProvider),
+                child: Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildScaffoldWithOrders(List<Order> allOrders, String? currentUserId) {
+    final availableOrders = allOrders.where((order) => 
+      order.delivererId == null &&
+      order.status == OrderStatus.pending
+    ).toList();
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(availableOrders),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(20),
@@ -207,9 +216,9 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   children: [
                     _buildStatsCards(),
                     SizedBox(height: 24),
-                    _buildActiveDeliveries(),
+                    _buildActiveDeliveries(allOrders, currentUserId),
                     SizedBox(height: 24),
-                    _buildAvailableOrders(),
+                    _buildAvailableOrders(allOrders),
                     SizedBox(height: 24),
                     _buildQuickActions(),
                   ],
@@ -219,11 +228,11 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: _buildBottomNavigation(allOrders),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(List<Order> availableOrders) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
     
@@ -296,7 +305,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                     animation: _pulseAnimation,
                     builder: (context, child) {
                       return Transform.scale(
-                        scale: _isAvailable && _availableOrders.isNotEmpty
+                        scale: _isAvailable
                             ? _pulseAnimation.value
                             : 1.0,
                         child: GestureDetector(
@@ -312,7 +321,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                                   : AppColors.warning,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow:
-                                  _isAvailable && _availableOrders.isNotEmpty
+                                  _isAvailable && availableOrders.isNotEmpty
                                   ? [
                                       BoxShadow(
                                         color: AppColors.success.withOpacity(
@@ -435,8 +444,13 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildActiveDeliveries() {
-    if (_activeDeliveries.isEmpty) return SizedBox.shrink();
+  Widget _buildActiveDeliveries(List<Order> allOrders, String? currentUserId) {
+    final activeDeliveries = allOrders.where((order) => 
+      order.delivererId == currentUserId &&
+      (order.status == OrderStatus.preparing || order.status == OrderStatus.outForDelivery)
+    ).toList();
+    
+    if (activeDeliveries.isEmpty) return SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +475,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '${_activeDeliveries.length}',
+                '${activeDeliveries.length}',
                 style: TextStyle(
                   color: AppColors.textOnPrimary,
                   fontSize: 12,
@@ -472,14 +486,16 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
           ],
         ),
         SizedBox(height: 16),
-        ..._activeDeliveries.map(
-          (delivery) => _buildActiveDeliveryCard(delivery),
+        ...activeDeliveries.map(
+          (order) => _buildActiveDeliveryCard(order),
         ),
       ],
     );
   }
 
-  Widget _buildActiveDeliveryCard(Map<String, dynamic> delivery) {
+  Widget _buildActiveDeliveryCard(Order order) {
+    final customerName = order.customerName ?? 'Cliente';
+    final storeName = order.storeName ?? 'Tienda';
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
@@ -517,7 +533,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      delivery['id'],
+                      order.id,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -525,7 +541,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                       ),
                     ),
                     Text(
-                      '${delivery['storeName']} → ${delivery['customerName']}',
+                      '$storeName → $customerName',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -541,7 +557,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  delivery['status'] == 'picked_up' ? 'En Camino' : 'Recogido',
+                  order.status == OrderStatus.outForDelivery ? 'En Camino' : 'Recogido',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -558,7 +574,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
               SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  delivery['deliveryLocation'],
+                  order.deliveryAddress ?? 'Dirección no disponible',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -566,7 +582,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                 ),
               ),
               Text(
-                'ETA: ${delivery['estimatedTime']}',
+                'ETA: 8-12 min', // TODO: Calculate based on distance
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.primary,
@@ -598,7 +614,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                     Navigator.pushNamed(
                       context,
                       '/deliverer-delivery-details',
-                      arguments: delivery,
+                      arguments: order,
                     );
                   },
                   icon: Icon(Icons.navigation, size: 16),
@@ -616,7 +632,12 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildAvailableOrders() {
+  Widget _buildAvailableOrders(List<Order> allOrders) {
+    final availableOrders = allOrders.where((order) => 
+      order.delivererId == null &&
+      order.status == OrderStatus.pending
+    ).toList();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -632,7 +653,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                 color: AppColors.textPrimary,
               ),
             ),
-            if (_availableOrders.isNotEmpty) ...[
+            if (availableOrders.isNotEmpty) ...[
               SizedBox(width: 8),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -641,7 +662,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${_availableOrders.length}',
+                  '${availableOrders.length}',
                   style: TextStyle(
                     color: AppColors.textOnPrimary,
                     fontSize: 12,
@@ -655,13 +676,13 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         SizedBox(height: 16),
         if (!_isAvailable)
           _buildUnavailableMessage()
-        else if (_availableOrders.isEmpty)
+        else if (availableOrders.isEmpty)
           _buildNoOrdersMessage()
         else
           SlideTransition(
             position: _slideAnimation,
             child: Column(
-              children: _availableOrders
+              children: availableOrders
                   .map((order) => _buildAvailableOrderCard(order))
                   .toList(),
             ),
@@ -728,17 +749,21 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildAvailableOrderCard(Map<String, dynamic> order) {
+  Widget _buildAvailableOrderCard(Order order) {
     final minutesAgo = DateTime.now()
-        .difference(order['orderTime'] as DateTime)
+        .difference(order.orderTime)
         .inMinutes;
+        
+    final customerName = order.customerName ?? 'Cliente';
+    final storeName = order.storeName ?? 'Tienda';
+    final isPriority = order.isPriority;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: order['isPriority']
+        border: isPriority
             ? Border.all(color: AppColors.warning, width: 2)
             : null,
         boxShadow: [
@@ -750,7 +775,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         ],
       ),
       child: InkWell(
-        onTap: () => _acceptOrder(order['id']),
+        onTap: () => _acceptOrder(order),
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: EdgeInsets.all(16),
@@ -761,16 +786,16 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: order['isPriority']
+                      color: isPriority
                           ? AppColors.warning.withOpacity(0.2)
                           : AppColors.secondaryWithOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      order['isPriority']
+                      isPriority
                           ? Icons.priority_high
                           : Icons.shopping_bag,
-                      color: order['isPriority']
+                      color: isPriority
                           ? AppColors.warning
                           : AppColors.secondary,
                       size: 20,
@@ -784,14 +809,14 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         Row(
                           children: [
                             Text(
-                              order['id'],
+                              order.id,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            if (order['isPriority']) ...[
+                            if (isPriority) ...[
                               SizedBox(width: 8),
                               Container(
                                 padding: EdgeInsets.symmetric(
@@ -815,7 +840,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                           ],
                         ),
                         Text(
-                          '${order['storeName']} • hace ${minutesAgo}min',
+                          '$storeName • hace ${minutesAgo}min',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -828,7 +853,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '\$${order['total'].toStringAsFixed(0)}',
+                        '\$${order.totalAmount.toStringAsFixed(0)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -836,7 +861,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         ),
                       ),
                       Text(
-                        '${order['items']} productos',
+                        '${order.items.length} productos',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -853,7 +878,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      order['storeLocation'],
+                      order.storeLocation ?? 'Ubicación de tienda',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -873,7 +898,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      order['deliveryLocation'],
+                      order.deliveryAddress ?? 'Dirección no disponible',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -901,7 +926,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         ),
                         SizedBox(width: 4),
                         Text(
-                          order['distance'],
+                          '300m', // TODO: Calculate based on location
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -927,7 +952,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         ),
                         SizedBox(width: 4),
                         Text(
-                          order['estimatedTime'],
+                          '8-12 min', // TODO: Calculate based on distance
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -944,7 +969,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      order['paymentMethod'],
+                      order.paymentMethod ?? 'Tarjeta',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -953,7 +978,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   ),
                   Spacer(),
                   ElevatedButton(
-                    onPressed: () => _acceptOrder(order['id']),
+                    onPressed: () => _acceptOrder(order),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -1057,7 +1082,11 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildBottomNavigation(List<Order> allOrders) {
+    final availableOrders = allOrders.where((order) => 
+      order.delivererId == null &&
+      order.status == OrderStatus.pending
+    ).toList();
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -1098,7 +1127,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
             icon: Stack(
               children: [
                 Icon(Icons.dashboard_outlined),
-                if (_availableOrders.isNotEmpty && _isAvailable)
+                if (availableOrders.isNotEmpty && _isAvailable)
                   Positioned(
                     right: 0,
                     top: 0,

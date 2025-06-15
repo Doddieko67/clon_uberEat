@@ -48,6 +48,19 @@ class OrdersNotifier extends AsyncNotifier<List<Order>> {
     }
   }
 
+  // Update order status specifically
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    state = const AsyncValue.loading();
+    try {
+      await _ordersCollection.doc(orderId).update({
+        'status': newStatus.toString().split('.').last,
+      });
+      // State will be updated by the snapshot listener
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
   // Check if an order can be cancelled
   bool canCancelOrder(Order order) {
     // Solo se puede cancelar si está pendiente o preparando

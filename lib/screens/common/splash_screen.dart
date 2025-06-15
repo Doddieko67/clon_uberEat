@@ -19,6 +19,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
+    _initalizeAuthState();
     // _checkAuthStatus();
   }
   // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas

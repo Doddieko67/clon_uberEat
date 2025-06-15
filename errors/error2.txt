@@ -1,3 +1,25 @@
 Launching lib/main.dart on 2201116PG in debug mode...
 Running Gradle task 'assembleDebug'...                          
-the Dart compiler exited unexpectedly.
+lib/screens/customer/checkout_screen.dart:174:36: Error: The getter 'location' isn't defined for the class 'Store'.
+ - 'Store' is from 'package:clonubereat/models/store_model.dart' ('lib/models/store_model.dart').
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'location'.
+        storeLocation: cart.store?.location ?? 'Ubicación de tienda',
+                                   ^^^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                           2,418ms
+Error: Gradle task assembleDebug failed with exit code 1

@@ -12,7 +12,10 @@ enum OrderStatus {
 class Order {
   final String id;
   final String customerId;
+  final String? customerName; // Optional cached customer name
   final String storeId;
+  final String? storeName; // Optional cached store name
+  final String? storeLocation; // Optional store location
   final String? delivererId;
   final List<OrderItem> items;
   final double totalAmount;
@@ -22,11 +25,17 @@ class Order {
   final DateTime? deliveryTime;
   final int? rating;
   final String? specialInstructions;
+  final bool isPriority; // Priority flag for urgent orders
+  final String? paymentMethod; // Payment method used
+  final String? customerPhone; // Optional cached customer phone
 
   Order({
     required this.id,
     required this.customerId,
+    this.customerName,
     required this.storeId,
+    this.storeName,
+    this.storeLocation,
     this.delivererId,
     required this.items,
     required this.totalAmount,
@@ -36,12 +45,18 @@ class Order {
     this.deliveryTime,
     this.rating,
     this.specialInstructions,
+    this.isPriority = false,
+    this.paymentMethod,
+    this.customerPhone,
   });
 
   Order copyWith({
     String? id,
     String? customerId,
+    String? customerName,
     String? storeId,
+    String? storeName,
+    String? storeLocation,
     String? delivererId,
     List<OrderItem>? items,
     double? totalAmount,
@@ -51,11 +66,17 @@ class Order {
     DateTime? deliveryTime,
     int? rating,
     String? specialInstructions,
+    bool? isPriority,
+    String? paymentMethod,
+    String? customerPhone,
   }) {
     return Order(
       id: id ?? this.id,
       customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
       storeId: storeId ?? this.storeId,
+      storeName: storeName ?? this.storeName,
+      storeLocation: storeLocation ?? this.storeLocation,
       delivererId: delivererId ?? this.delivererId,
       items: items ?? this.items,
       totalAmount: totalAmount ?? this.totalAmount,
@@ -65,6 +86,9 @@ class Order {
       deliveryTime: deliveryTime ?? this.deliveryTime,
       rating: rating ?? this.rating,
       specialInstructions: specialInstructions ?? this.specialInstructions,
+      isPriority: isPriority ?? this.isPriority,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      customerPhone: customerPhone ?? this.customerPhone,
     );
   }
 
@@ -72,7 +96,10 @@ class Order {
     return {
       'id': id,
       'customerId': customerId,
+      'customerName': customerName,
       'storeId': storeId,
+      'storeName': storeName,
+      'storeLocation': storeLocation,
       'delivererId': delivererId,
       'items': items.map((item) => item.toMap()).toList(),
       'totalAmount': totalAmount,
@@ -82,6 +109,9 @@ class Order {
       'deliveryTime': deliveryTime?.toIso8601String(),
       'rating': rating,
       'specialInstructions': specialInstructions,
+      'isPriority': isPriority,
+      'paymentMethod': paymentMethod,
+      'customerPhone': customerPhone,
     };
   }
 
@@ -89,7 +119,10 @@ class Order {
     return Order(
       id: map['id'] as String,
       customerId: map['customerId'] as String,
+      customerName: map['customerName'] as String?,
       storeId: map['storeId'] as String,
+      storeName: map['storeName'] as String?,
+      storeLocation: map['storeLocation'] as String?,
       delivererId: map['delivererId'] as String?,
       items: (map['items'] as List<dynamic>)
           .map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
@@ -104,6 +137,9 @@ class Order {
           : null,
       rating: map['rating'] as int?,
       specialInstructions: map['specialInstructions'] as String?,
+      isPriority: map['isPriority'] as bool? ?? false,
+      paymentMethod: map['paymentMethod'] as String?,
+      customerPhone: map['customerPhone'] as String?,
     );
   }
 }

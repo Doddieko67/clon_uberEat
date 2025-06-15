@@ -1,15 +1,22 @@
 // screens/deliverer/delivery_details_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
-import 'dart:math' as math;
 import '../../theme/app_theme.dart';
+import '../../providers/order_provider.dart';
+import '../../models/order_model.dart';
+import '../../services/location_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-class DeliveryDetailsScreen extends StatefulWidget {
+class DeliveryDetailsScreen extends ConsumerStatefulWidget {
   @override
   _DeliveryDetailsScreenState createState() => _DeliveryDetailsScreenState();
 }
 
-class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
+class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
     with TickerProviderStateMixin {
   late AnimationController _statusController;
   late AnimationController _pulseController;
@@ -17,71 +24,62 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
   late Animation<double> _pulseAnimation;
 
   Timer? _updateTimer;
-  String _currentStatus =
-      'accepted'; // accepted, picked_up, delivering, delivered
+  Order? _order;
+  String? _orderId;
+  
+  // Location tracking
+  final LocationService _locationService = LocationService();
+  Position? _currentLocation;
+  StreamSubscription<Position>? _locationSubscription;
 
-  // Datos del pedido (en una app real vendrían como argumentos)
-  final Map<String, dynamic> _orderData = {
-    'id': '#CMP1245',
-    'storeName': 'Cafetería Central',
-    'storeLocation': 'Edificio Principal - Planta Baja',
-    'storePhone': '+52 555 123 4567',
-    'customerName': 'Ana García López',
-    'customerPhone': '+52 555 987 6543',
-    'deliveryLocation': 'Biblioteca Central - Sala de Estudio 3',
-    'deliveryInstructions':
-        'Entrada por la parte trasera de la biblioteca. Buscar en el mostrador de información.',
-    'items': [
-      {'name': 'Tacos de Pastor', 'quantity': 3, 'price': 45.0},
-      {'name': 'Agua de Horchata', 'quantity': 2, 'price': 25.0},
-      {'name': 'Salsa Extra', 'quantity': 1, 'price': 10.0},
-    ],
-    'total': 185.0,
-    'paymentMethod': 'Tarjeta (Pagado)',
-    'distance': '320m',
-    'estimatedTime': '8 min',
-    'orderTime': DateTime.now().subtract(Duration(minutes: 15)),
-    'acceptedTime': DateTime.now().subtract(Duration(minutes: 3)),
-    'specialNotes': 'Cliente solicita llamar 5 minutos antes de llegar',
-    'isPriority': true,
-  };
-
-  final List<Map<String, dynamic>> _statusSteps = [
-    {
-      'key': 'accepted',
+  Map<OrderStatus, Map<String, dynamic>> get _statusSteps => {
+    OrderStatus.pending: {
       'title': 'Pedido Aceptado',
       'subtitle': 'Dirígete a recoger el pedido',
       'icon': Icons.check_circle,
       'color': AppColors.primary,
     },
-    {
-      'key': 'picked_up',
+    OrderStatus.preparing: {
       'title': 'Pedido Recogido',
       'subtitle': 'En camino al cliente',
       'icon': Icons.shopping_bag,
       'color': AppColors.warning,
     },
-    {
-      'key': 'delivering',
+    OrderStatus.outForDelivery: {
       'title': 'En Entrega',
       'subtitle': 'Cerca del destino',
       'icon': Icons.delivery_dining,
       'color': AppColors.secondary,
     },
-    {
-      'key': 'delivered',
+    OrderStatus.delivered: {
       'title': 'Entregado',
       'subtitle': 'Entrega completada',
       'icon': Icons.done_all,
       'color': AppColors.success,
     },
-  ];
+  };
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
     _setupUpdateTimer();
+    _initializeLocation();
+    
+    // Obtener el pedido desde los argumentos de navegación
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is Map<String, dynamic> && args['id'] != null) {
+        setState(() {
+          _orderId = args['id'];
+        });
+      } else if (args is Order) {
+        setState(() {
+          _order = args;
+          _orderId = args.id;
+        });
+      }
+    });
   }
 
   void _setupAnimations() {
@@ -104,47 +102,93 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
     );
 
     _statusController.forward();
-    if (_currentStatus != 'delivered') {
+    if (_order?.status != OrderStatus.delivered) {
       _pulseController.repeat(reverse: true);
     }
   }
 
   void _setupUpdateTimer() {
     _updateTimer = Timer.periodic(Duration(seconds: 30), (timer) {
-      if (mounted && _currentStatus != 'delivered') {
+      if (mounted && _order?.status != OrderStatus.delivered) {
         setState(() {
-          // Simular actualizaciones de tiempo estimado
+          // Actualizar datos del pedido
         });
       }
     });
   }
 
-  void _updateStatus(String newStatus) {
-    setState(() {
-      _currentStatus = newStatus;
-    });
+  void _initializeLocation() async {
+    try {
+      final hasPermission = await _locationService.requestLocationPermission();
+      if (!hasPermission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Permisos de ubicación requeridos para tracking'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
 
-    _statusController.reset();
-    _statusController.forward();
+      // Obtener ubicación inicial
+      final position = await _locationService.getCurrentLocation();
+      if (position != null) {
+        setState(() {
+          _currentLocation = position;
+        });
+      }
 
-    if (newStatus == 'delivered') {
-      _pulseController.stop();
-      _showDeliveryCompleteDialog();
-    } else {
-      _pulseController.repeat(reverse: true);
+      // Iniciar tracking en tiempo real
+      _locationSubscription = _locationService.getLocationStream().listen(
+        (Position position) {
+          setState(() {
+            _currentLocation = position;
+          });
+        },
+        onError: (error) {
+          print('Error in location stream: $error');
+        },
+      );
+    } catch (e) {
+      print('Error initializing location: $e');
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Estado actualizado: ${_getStatusTitle(newStatus)}'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
-  String _getStatusTitle(String status) {
-    return _statusSteps.firstWhere((step) => step['key'] == status)['title'];
+  void _updateStatus(OrderStatus newStatus) async {
+    if (_order == null) return;
+    
+    try {
+      await ref.read(ordersProvider.notifier).updateOrderStatus(_order!.id, newStatus);
+      
+      _statusController.reset();
+      _statusController.forward();
+
+      if (newStatus == OrderStatus.delivered) {
+        _pulseController.stop();
+        _showDeliveryCompleteDialog();
+      } else {
+        _pulseController.repeat(reverse: true);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Estado actualizado: ${_getStatusTitle(newStatus)}'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al actualizar estado: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  String _getStatusTitle(OrderStatus status) {
+    return _statusSteps[status]?['title'] ?? 'Estado desconocido';
   }
 
   void _showDeliveryCompleteDialog() {
@@ -186,7 +230,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                 ),
                 SizedBox(height: 12),
                 Text(
-                  'Has completado exitosamente la entrega del pedido ${_orderData['id']}',
+                  'Has completado exitosamente la entrega del pedido ${_order?.id ?? 'N/A'}',
                   style: TextStyle(
                     fontSize: 16,
                     color: AppColors.textSecondary,
@@ -230,11 +274,69 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
     _statusController.dispose();
     _pulseController.dispose();
     _updateTimer?.cancel();
+    _locationSubscription?.cancel();
+    _locationService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Escuchar cambios en las órdenes
+    if (_orderId != null) {
+      final ordersAsyncValue = ref.watch(ordersProvider);
+      
+      return ordersAsyncValue.when(
+        data: (orders) {
+          _order = orders.firstWhere(
+            (order) => order.id == _orderId,
+            orElse: () => _order ?? Order(
+              id: _orderId!,
+              customerId: '',
+              storeId: '',
+              items: [],
+              totalAmount: 0,
+              status: OrderStatus.pending,
+              deliveryAddress: '',
+              orderTime: DateTime.now(),
+            ),
+          );
+          
+          return _buildScaffold();
+        },
+        loading: () => Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: AppColors.surface,
+            title: Text('Cargando...'),
+          ),
+          body: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        ),
+        error: (error, stack) => Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: AppColors.surface,
+            title: Text('Error'),
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: AppColors.error),
+                SizedBox(height: 16),
+                Text('Error al cargar el pedido: $error'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return _buildScaffold();
+  }
+  
+  Widget _buildScaffold() {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
@@ -252,7 +354,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
             _buildCustomerInfo(),
             SizedBox(height: 24),
             _buildOrderSummary(),
-            if (_orderData['specialNotes'].isNotEmpty) ...[
+            if (_hasSpecialNotes()) ...[
               SizedBox(height: 24),
               _buildSpecialNotes(),
             ],
@@ -264,6 +366,179 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
       ),
       bottomNavigationBar: _buildMainActionButton(),
     );
+  }
+  
+  bool _hasSpecialNotes() {
+    return _order?.specialInstructions?.isNotEmpty == true;
+  }
+  
+  String _getEstimatedTime() {
+    if (_currentLocation == null) return '8-12 min';
+    
+    // Simulación de cálculo de tiempo estimado
+    final distance = _getDistanceToDestination();
+    if (distance != null) {
+      final minutes = (distance / 50).ceil(); // Aprox 50m por minuto caminando
+      return '${minutes}-${minutes + 2} min';
+    }
+    return '8-12 min';
+  }
+  
+  String _getDistance() {
+    final distance = _getDistanceToDestination();
+    if (distance != null) {
+      if (distance >= 1000) {
+        return '${(distance / 1000).toStringAsFixed(1)}km';
+      } else {
+        return '${distance.toInt()}m';
+      }
+    }
+    return '320m';
+  }
+
+  double? _getDistanceToDestination() {
+    if (_currentLocation == null) return null;
+    
+    // Coordenadas de ejemplo para el destino (en una app real vendrían del pedido)
+    const double destLat = 25.6866; // Ejemplo: Monterrey, México
+    const double destLng = -100.3161;
+    
+    return _locationService.calculateDistance(
+      _currentLocation!.latitude,
+      _currentLocation!.longitude,
+      destLat,
+      destLng,
+    );
+  }
+  
+  String _getStoreLocation() {
+    return _order?.storeLocation ?? 'Ubicación de tienda';
+  }
+  
+  String _getCustomerPhone() {
+    return _order?.customerPhone ?? '+52 555 987 6543';
+  }
+  
+  String _getStorePhone() {
+    // En una app real, esto vendría del modelo de la tienda
+    return '+52 555 123 4567';
+  }
+  
+  String _getPaymentMethod() {
+    final method = _order?.paymentMethod ?? 'Tarjeta';
+    return '$method (Pagado)';
+  }
+  
+  String _getCustomerName() {
+    return _order?.customerName ?? 'Cliente';
+  }
+  
+  String _getStoreName() {
+    return _order?.storeName ?? 'Tienda';
+  }
+  
+  bool _getIsPriority() {
+    return _order?.isPriority ?? false;
+  }
+  
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    // Solicitar permisos de teléfono
+    final phonePermission = await Permission.phone.request();
+    
+    if (phonePermission.isDenied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Permisos de teléfono requeridos'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se puede hacer la llamada'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al hacer la llamada: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openWhatsApp(String phoneNumber) async {
+    // Remover caracteres especiales del número
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // URL de WhatsApp con mensaje predefinido
+    final whatsappUrl = Uri.parse(
+      'https://wa.me/$cleanNumber?text=Hola, soy tu repartidor de UberEats. Estoy en camino con tu pedido ${_order?.id ?? ''}.'
+    );
+    
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se puede abrir WhatsApp'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abrir WhatsApp'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openWhatsAppStore(String phoneNumber) async {
+    // Remover caracteres especiales del número
+    final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // URL de WhatsApp con mensaje predefinido para la tienda
+    final whatsappUrl = Uri.parse(
+      'https://wa.me/$cleanNumber?text=Hola, soy el repartidor asignado al pedido ${_order?.id ?? ''}. Estoy en camino a recoger el pedido.'
+    );
+    
+    try {
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se puede abrir WhatsApp'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al abrir WhatsApp'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   AppBar _buildAppBar() {
@@ -330,7 +605,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _orderData['id'],
+                      _order?.id ?? 'N/A',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -338,7 +613,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                       ),
                     ),
                     Text(
-                      _orderData['customerName'],
+                      _getCustomerName(),
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.textOnPrimary.withOpacity(0.9),
@@ -347,7 +622,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                   ],
                 ),
               ),
-              if (_orderData['isPriority'])
+              if (_getIsPriority())
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -371,7 +646,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
               Icon(Icons.access_time, color: AppColors.textOnPrimary, size: 16),
               SizedBox(width: 8),
               Text(
-                'Tiempo estimado: ${_orderData['estimatedTime']}',
+                'Tiempo estimado: ${_getEstimatedTime()}',
                 style: TextStyle(fontSize: 14, color: AppColors.textOnPrimary),
               ),
               Spacer(),
@@ -382,7 +657,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
               ),
               SizedBox(width: 8),
               Text(
-                _orderData['distance'],
+                _getDistance(),
                 style: TextStyle(fontSize: 14, color: AppColors.textOnPrimary),
               ),
             ],
@@ -412,11 +687,13 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
             ),
           ),
           SizedBox(height: 20),
-          ..._statusSteps.asMap().entries.map((entry) {
+          ..._statusSteps.entries.toList().asMap().entries.map((entry) {
             final index = entry.key;
-            final step = entry.value;
-            final isActive = step['key'] == _currentStatus;
-            final isCompleted = _getStepIndex(_currentStatus) > index;
+            final statusEntry = entry.value;
+            final status = statusEntry.key;
+            final step = statusEntry.value;
+            final isActive = status == _order?.status;
+            final isCompleted = _getStepIndex(_order?.status) > index;
             final isLast = index == _statusSteps.length - 1;
 
             return AnimatedBuilder(
@@ -537,8 +814,9 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
     );
   }
 
-  int _getStepIndex(String stepKey) {
-    return _statusSteps.indexWhere((step) => step['key'] == stepKey);
+  int _getStepIndex(OrderStatus? status) {
+    if (status == null) return -1;
+    return _statusSteps.keys.toList().indexOf(status);
   }
 
   Widget _buildLocationInfo() {
@@ -582,7 +860,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                           ),
                         ),
                         Text(
-                          _orderData['storeName'],
+                          _getStoreName(),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -590,7 +868,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                           ),
                         ),
                         Text(
-                          _orderData['storeLocation'],
+                          _getStoreLocation(),
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
@@ -599,17 +877,36 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                       ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: () {
-                      // Llamar a la tienda
-                    },
-                    icon: Icon(Icons.phone, color: AppColors.warning),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.warning.withOpacity(0.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          _makePhoneCall(_getStorePhone());
+                        },
+                        icon: Icon(Icons.phone, color: AppColors.warning),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.warning.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        tooltip: 'Llamar tienda',
                       ),
-                    ),
+                      SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () {
+                          _openWhatsAppStore(_getStorePhone());
+                        },
+                        icon: Icon(Icons.chat, color: AppColors.success),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.success.withOpacity(0.1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        tooltip: 'WhatsApp tienda',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -657,14 +954,14 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                           ),
                         ),
                         Text(
-                          _orderData['deliveryLocation'],
+                          _order?.deliveryAddress ?? 'Dirección no disponible',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        if (_orderData['deliveryInstructions'].isNotEmpty) ...[
+                        if (_order?.specialInstructions?.isNotEmpty == true) ...[
                           SizedBox(height: 8),
                           Container(
                             padding: EdgeInsets.all(8),
@@ -682,7 +979,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    _orderData['deliveryInstructions'],
+                                    _order!.specialInstructions!,
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -702,6 +999,10 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                       Navigator.pushNamed(
                         context,
                         '/deliverer-customer-location',
+                        arguments: {
+                          'currentLocation': _currentLocation,
+                          'order': _order,
+                        },
                       );
                     },
                     icon: Icon(Icons.map, color: AppColors.primary),
@@ -758,7 +1059,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _orderData['customerName'],
+                      _getCustomerName(),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -766,7 +1067,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                       ),
                     ),
                     Text(
-                      _orderData['customerPhone'],
+                      _getCustomerPhone(),
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -775,19 +1076,36 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Llamar al cliente
-                },
-                icon: Icon(Icons.phone, size: 16),
-                label: Text('Llamar'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      _makePhoneCall(_getCustomerPhone());
+                    },
+                    icon: Icon(Icons.phone, color: AppColors.primary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    tooltip: 'Llamar',
                   ),
-                ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      _openWhatsApp(_getCustomerPhone());
+                    },
+                    icon: Icon(Icons.chat, color: AppColors.success),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.success.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    tooltip: 'WhatsApp',
+                  ),
+                ],
               ),
             ],
           ),
@@ -816,7 +1134,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
             ),
           ),
           SizedBox(height: 16),
-          ...(_orderData['items'] as List).map((item) {
+          ...(_order?.items ?? []).map((item) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -837,7 +1155,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      '${item['quantity']}x ${item['name']}',
+                      '${item.quantity}x ${item.productName}',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textPrimary,
@@ -845,7 +1163,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                     ),
                   ),
                   Text(
-                    '\$${(item['price'] * item['quantity']).toStringAsFixed(0)}',
+                    '\$${(item.priceAtPurchase * item.quantity).toStringAsFixed(0)}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -869,7 +1187,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
                 ),
               ),
               Text(
-                '\$${_orderData['total'].toStringAsFixed(0)}',
+                '\$${_order?.totalAmount.toStringAsFixed(0) ?? '0'}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -880,7 +1198,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
           ),
           SizedBox(height: 8),
           Text(
-            _orderData['paymentMethod'],
+            _getPaymentMethod(),
             style: TextStyle(
               fontSize: 14,
               color: AppColors.success,
@@ -919,7 +1237,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
           ),
           SizedBox(height: 8),
           Text(
-            _orderData['specialNotes'],
+            _order?.specialInstructions ?? '',
             style: TextStyle(
               fontSize: 14,
               color: AppColors.textPrimary,
@@ -983,20 +1301,20 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
     String buttonText;
     VoidCallback? onPressed;
 
-    switch (_currentStatus) {
-      case 'accepted':
+    switch (_order?.status) {
+      case OrderStatus.pending:
         buttonText = 'Marcar como Recogido';
-        onPressed = () => _updateStatus('picked_up');
+        onPressed = () => _updateStatus(OrderStatus.preparing);
         break;
-      case 'picked_up':
+      case OrderStatus.preparing:
         buttonText = 'Iniciar Entrega';
-        onPressed = () => _updateStatus('delivering');
+        onPressed = () => _updateStatus(OrderStatus.outForDelivery);
         break;
-      case 'delivering':
+      case OrderStatus.outForDelivery:
         buttonText = 'Marcar como Entregado';
-        onPressed = () => _updateStatus('delivered');
+        onPressed = () => _updateStatus(OrderStatus.delivered);
         break;
-      case 'delivered':
+      case OrderStatus.delivered:
         buttonText = 'Entrega Completada';
         onPressed = null;
         break;
@@ -1023,7 +1341,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
         child: ElevatedButton.icon(
           onPressed: onPressed,
           icon: Icon(
-            _currentStatus == 'delivered' ? Icons.check : Icons.arrow_forward,
+            _order?.status == OrderStatus.delivered ? Icons.check : Icons.arrow_forward,
             color: AppColors.textOnPrimary,
           ),
           label: Text(
@@ -1035,7 +1353,7 @@ class _DeliveryDetailsScreenState extends State<DeliveryDetailsScreen>
             ),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: _currentStatus == 'delivered'
+            backgroundColor: _order?.status == OrderStatus.delivered
                 ? AppColors.success
                 : AppColors.primary,
             shape: RoundedRectangleBorder(
