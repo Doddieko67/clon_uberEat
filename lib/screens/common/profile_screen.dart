@@ -6,6 +6,7 @@ import 'package:clonubereat/providers/auth_provider.dart';
 import 'package:clonubereat/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   @override
@@ -175,6 +176,307 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ],
       ),
     );
+  }
+
+  void _showRoleSwitcher() {
+    final currentUser = ref.read(authNotifierProvider).user;
+    if (currentUser == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textTertiary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            
+            // Title
+            Text(
+              'Cambiar Rol',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Selecciona el rol que deseas usar en la aplicación',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: 24),
+
+            // Role options
+            _buildRoleOption(
+              icon: Icons.person,
+              title: 'Cliente',
+              description: 'Explorar tiendas y realizar pedidos',
+              role: UserRole.customer,
+              currentRole: currentUser.role,
+              color: AppColors.primary,
+            ),
+            SizedBox(height: 12),
+            _buildRoleOption(
+              icon: Icons.store,
+              title: 'Tienda',
+              description: 'Gestionar menú, pedidos y analytics',
+              role: UserRole.store,
+              currentRole: currentUser.role,
+              color: AppColors.secondary,
+            ),
+            SizedBox(height: 12),
+            _buildRoleOption(
+              icon: Icons.delivery_dining,
+              title: 'Repartidor',
+              description: 'Entregar pedidos y ganar dinero',
+              role: UserRole.deliverer,
+              currentRole: currentUser.role,
+              color: AppColors.success,
+            ),
+            SizedBox(height: 24),
+            
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancelar'),
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleOption({
+    required IconData icon,
+    required String title,
+    required String description,
+    required UserRole role,
+    required UserRole currentRole,
+    required Color color,
+  }) {
+    final isSelected = role == currentRole;
+    
+    return GestureDetector(
+      onTap: () => _switchToRole(role),
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? color.withOpacity(0.1) 
+              : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? color 
+                : AppColors.border.withOpacity(0.3),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? color 
+                    : color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected 
+                    ? AppColors.textOnPrimary 
+                    : color,
+                size: 24,
+              ),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (isSelected) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'ACTUAL',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textOnPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: color,
+                size: 20,
+              )
+            else
+              Icon(
+                Icons.arrow_forward_ios,
+                color: AppColors.textTertiary,
+                size: 16,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _switchToRole(UserRole newRole) async {
+    final currentUser = ref.read(authNotifierProvider).user;
+    if (currentUser == null || newRole == currentUser.role) {
+      Navigator.pop(context);
+      return;
+    }
+
+    Navigator.pop(context);
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        content: Row(
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(width: 16),
+            Text(
+              'Cambiando rol...',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      // Update user role
+      await ref.read(authNotifierProvider.notifier).updateUserRole(newRole);
+      
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      // Navigate to appropriate screen based on role
+      if (mounted) {
+        String route;
+        switch (newRole) {
+          case UserRole.customer:
+            route = '/customer';
+            break;
+          case UserRole.store:
+            route = '/store';
+            break;
+          case UserRole.deliverer:
+            route = '/deliverer';
+            break;
+          case UserRole.admin:
+            route = '/admin-dashboard';
+            break;
+        }
+        
+        context.go(route);
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.textOnPrimary),
+                SizedBox(width: 8),
+                Text('Rol cambiado exitosamente'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+      
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: AppColors.textOnPrimary),
+                SizedBox(width: 8),
+                Text('Error al cambiar rol: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -560,6 +862,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 SnackBar(content: Text('Centro de ayuda próximamente')),
               );
             },
+          ),
+          Divider(height: 1),
+          ListTile(
+            leading: Icon(Icons.swap_horiz, color: AppColors.secondary),
+            title: Text('Cambiar Rol'),
+            subtitle: Text('Alternar entre customer, store y deliverer'),
+            trailing: Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _showRoleSwitcher(),
           ),
         ],
       ),

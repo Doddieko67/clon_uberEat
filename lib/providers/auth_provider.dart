@@ -378,4 +378,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return UserRole.customer;
     }
   }
+
+  // Método para cambiar el rol del usuario
+  Future<void> updateUserRole(UserRole newRole) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      if (state.user == null) {
+        throw Exception('No hay usuario autenticado');
+      }
+
+      // Actualizar el rol del usuario
+      final updatedUser = state.user!.copyWith(role: newRole);
+      state = state.copyWith(user: updatedUser);
+
+      // Guardar en Firestore
+      await _saveUserDataToFirestore();
+
+      _setLoading(false);
+    } catch (e) {
+      _setError('Error al cambiar rol: ${e.toString()}');
+      _setLoading(false);
+      rethrow;
+    }
+  }
 }
