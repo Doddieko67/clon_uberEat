@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
 import 'store_analytics_screen.dart';
-import 'inventory_management_screen.dart';
 
 class StoreDashboardScreen extends StatefulWidget {
   @override
@@ -16,7 +15,6 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
 
   Timer? _refreshTimer;
   bool _isStoreOpen = true;
-  int _currentBottomIndex = 0;
 
   // Datos simulados de la tienda
   final Map<String, dynamic> _storeInfo = {
@@ -236,7 +234,6 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -255,33 +252,40 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _storeInfo['name'],
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: AppColors.warning, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        '${_storeInfo['rating']} • ${_storeInfo['totalOrders']} pedidos',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                        ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _storeInfo['name'],
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
-                    ],
-                  ),
-                ],
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: AppColors.warning, size: 16),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${_storeInfo['rating']} • ${_storeInfo['totalOrders']} pedidos',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: 8),
               Row(
                 children: [
                   // Notificaciones con animación
@@ -508,36 +512,10 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
               ),
             ),
             SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                'Inventario',
-                Icons.inventory,
-                AppColors.warning,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => InventoryManagementScreen(),
-                  ),
-                ),
-              ),
-            ),
+Expanded(child: SizedBox()), // Espacio vacío
           ],
         ),
         SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                'Configuración',
-                Icons.settings,
-                AppColors.secondary,
-                () => Navigator.pushNamed(context, '/store-profile-settings'),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(child: SizedBox()), // Espacio vacío
-          ],
-        ),
       ],
     );
   }
@@ -864,85 +842,4 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.darkWithOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        currentIndex: _currentBottomIndex,
-        onTap: (index) {
-          setState(() {
-            _currentBottomIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              // Ya estamos en Dashboard
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/store-order-management');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/store-menu-management');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/store-profile-settings');
-              break;
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textTertiary,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                Icon(Icons.receipt_long_outlined),
-                if (_todayStats['nuevos']! > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            activeIcon: Icon(Icons.receipt_long),
-            label: 'Pedidos',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu_outlined),
-            activeIcon: Icon(Icons.restaurant_menu),
-            label: 'Menú',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings),
-            label: 'Configuración',
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -822,101 +822,35 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
 
               SizedBox(height: 24),
 
-              // Información del pedido
-              _buildDetailSection('Información del Pedido', [
-                _buildDetailRow('ID', order['id']),
-                _buildDetailRow('Cliente', order['customerName']),
-                _buildDetailRow('Teléfono', order['customerPhone']),
-                _buildDetailRow('Ubicación', order['deliveryLocation']),
-                _buildDetailRow('Pago', order['paymentMethod']),
-                _buildDetailRow('Hora', _formatOrderTime(order['orderTime'])),
-              ]),
-
-              SizedBox(height: 20),
-
-              // Productos
-              Text(
-                'Productos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-
-              SizedBox(height: 12),
-
               Expanded(
-                child: ListView.builder(
-                  itemCount: order['items'].length,
-                  itemBuilder: (context, index) {
-                    final item = order['items'][index];
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 8),
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              gradient: AppGradients.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.fastfood,
-                              color: AppColors.textOnPrimary,
-                              size: 20,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['name'],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  '\$${item['price'].toStringAsFixed(0)} c/u',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            '${item['quantity']}x',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            '\$${(item['price'] * item['quantity']).toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Información del pedido (Collapsible)
+                      _buildCollapsibleDetailSection(
+                        'Información del Pedido',
+                        Icons.info_outline,
+                        [
+                          _buildDetailRow('ID', order['id']),
+                          _buildDetailRow('Cliente', order['customerName']),
+                          _buildDetailRow('Teléfono', order['customerPhone']),
+                          _buildDetailRow('Ubicación', order['deliveryLocation']),
+                          _buildDetailRow('Pago', order['paymentMethod']),
+                          _buildDetailRow('Hora', _formatOrderTime(order['orderTime'])),
+                          if (order['customerNote'].isNotEmpty)
+                            _buildDetailRow('Nota especial', order['customerNote']),
                         ],
+                        isInitiallyExpanded: true,
                       ),
-                    );
-                  },
+
+                      SizedBox(height: 16),
+
+                      // Productos (Collapsible)
+                      _buildCollapsibleProductsSection(order['items']),
+
+                      SizedBox(height: 16),
+                    ],
+                  ),
                 ),
               ),
 
@@ -985,6 +919,203 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
           SizedBox(height: 12),
           ...children,
         ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleDetailSection(
+    String title,
+    IconData icon,
+    List<Widget> children, {
+    bool isInitiallyExpanded = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: AppColors.primary.withOpacity(0.1),
+        ),
+        child: ExpansionTile(
+          initiallyExpanded: isInitiallyExpanded,
+          leading: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          iconColor: AppColors.primary,
+          collapsedIconColor: AppColors.textSecondary,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Column(
+                children: children,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsibleProductsSection(List<dynamic> items) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: AppColors.primary.withOpacity(0.1),
+        ),
+        child: ExpansionTile(
+          initiallyExpanded: true,
+          leading: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.restaurant_menu,
+              color: AppColors.secondary,
+              size: 20,
+            ),
+          ),
+          title: Row(
+            children: [
+              Text(
+                'Productos',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${items.length}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          iconColor: AppColors.primary,
+          collapsedIconColor: AppColors.textSecondary,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Column(
+                children: items.map<Widget>((item) {
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            gradient: AppGradients.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.fastfood,
+                            color: AppColors.textOnPrimary,
+                            size: 20,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item['name'],
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                '\$${item['price'].toStringAsFixed(0)} c/u',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${item['quantity']}x',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          '\$${(item['price'] * item['quantity']).toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

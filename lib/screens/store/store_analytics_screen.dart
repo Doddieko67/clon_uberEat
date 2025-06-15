@@ -21,7 +21,10 @@ class _StoreAnalyticsScreenState extends ConsumerState<StoreAnalyticsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAnalytics();
+    // Evitar el error de Riverpod usando postFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAnalytics();
+    });
   }
 
   void _loadAnalytics() {

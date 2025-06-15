@@ -84,10 +84,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         route = '/customer';
         break;
       case 'store':
-        route = '/store-dashboard';
+        route = '/store';
         break;
       case 'deliverer':
-        route = '/deliverer-dashboard';
+        route = '/deliverer';
         break;
       case 'admin':
         route = '/admin-dashboard';

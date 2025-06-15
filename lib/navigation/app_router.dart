@@ -11,8 +11,17 @@ import '../screens/customer/store_detail_screen.dart';
 import '../screens/customer/checkout_screen.dart';
 import '../screens/customer/order_tracking_screen.dart';
 import '../screens/store/store_dashboard_screen.dart';
+import '../screens/store/order_management_screen.dart';
+import '../screens/store/menu_management_screen.dart';
+import '../screens/store/store_analytics_screen.dart';
+import '../screens/store/store_profile_settings_screen.dart';
 import '../screens/deliverer/deliverer_dashboard_screen.dart';
+import '../screens/deliverer/delivery_details_screen.dart';
+import '../screens/deliverer/delivery_history_screen.dart';
+import '../screens/deliverer/deliverer_location_screen.dart';
 import 'customer_shell.dart';
+import 'store_shell.dart';
+import 'deliverer_shell.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -74,16 +83,68 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // Store routes (no shell navigation yet)
-    GoRoute(
-      path: '/store-dashboard',
-      builder: (context, state) => StoreDashboardScreen(),
+    // Store routes with shell navigation
+    ShellRoute(
+      builder: (context, state, child) => StoreShell(child: child),
+      routes: [
+        GoRoute(
+          path: '/store',
+          builder: (context, state) => StoreDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/store/orders',
+          builder: (context, state) => OrderManagementScreen(),
+        ),
+        GoRoute(
+          path: '/store/menu',
+          builder: (context, state) => MenuManagementScreen(),
+        ),
+        GoRoute(
+          path: '/store/analytics',
+          builder: (context, state) => StoreAnalyticsScreen(storeId: 'default-store'),
+        ),
+        GoRoute(
+          path: '/store/settings',
+          builder: (context, state) => StoreProfileSettingsScreen(),
+        ),
+        GoRoute(
+          path: '/store/profile',
+          builder: (context, state) => ProfileScreen(),
+        ),
+      ],
     ),
 
-    // Deliverer routes (no shell navigation yet)
+    // Deliverer routes with shell navigation
+    ShellRoute(
+      builder: (context, state, child) => DelivererShell(child: child),
+      routes: [
+        GoRoute(
+          path: '/deliverer',
+          builder: (context, state) => DelivererDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/deliverer/active',
+          builder: (context, state) => DeliveryDetailsScreen(),
+        ),
+        GoRoute(
+          path: '/deliverer/history',
+          builder: (context, state) => DeliveryHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/deliverer/location',
+          builder: (context, state) => DelivererLocationScreen(),
+        ),
+      ],
+    ),
+
+    // Legacy routes for backward compatibility
+    GoRoute(
+      path: '/store-dashboard',
+      redirect: (context, state) => '/store',
+    ),
     GoRoute(
       path: '/deliverer-dashboard',
-      builder: (context, state) => DelivererDashboardScreen(),
+      redirect: (context, state) => '/deliverer',
     ),
   ],
   errorBuilder: (context, state) => Scaffold(
