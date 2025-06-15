@@ -1,18 +1,26 @@
 [
   {
     "boletaNumber": "1234567890",
-    "password": "password123"
+    "password": "password123",
+    "role": "customer",
+    "name": "Cliente Demo"
   },
   {
     "boletaNumber": "2022031111",
-    "password": "123456"
+    "password": "123456",
+    "role": "store",
+    "name": "Tienda Demo"
   },
   {
     "boletaNumber": "0987654321",
-    "password": "securepass"
+    "password": "securepass",
+    "role": "deliverer",
+    "name": "Repartidor Demo"
   },
   {
     "boletaNumber": "1122334455",
-    "password": "test1234"
+    "password": "test1234",
+    "role": "admin",
+    "name": "Admin Demo"
   }
 ]

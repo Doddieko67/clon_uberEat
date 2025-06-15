@@ -138,12 +138,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // 5. Crear objeto User completo con datos del campus
       final fb_auth.User? firebaseUser = _firebaseAuthRepository.getCurrentUser();
       if (firebaseUser != null) {
+        // Obtener el rol del campus DB
+        final userRole = _parseUserRole(campusUser['role'] ?? 'customer');
+        final userName = campusUser['name'] ?? firebaseUser.displayName ?? _getNameFromBoletaNumber(boletaNumber);
+        
         final newUser = User(
           id: firebaseUser.uid,
-          name: firebaseUser.displayName ?? _getNameFromBoletaNumber(boletaNumber),
+          name: userName,
           phone: firebaseUser.phoneNumber,
           boletaNumber: boletaNumber,
-          role: UserRole.customer,
+          role: userRole,
           status: UserStatus.active,
           lastActive: DateTime.now(),
         );
@@ -357,6 +361,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return ['place_order', 'view_order_history'].contains(permission);
       default:
         return false;
+    }
+  }
+
+  // Método para convertir string de rol a UserRole enum
+  UserRole _parseUserRole(String roleString) {
+    switch (roleString.toLowerCase()) {
+      case 'store':
+        return UserRole.store;
+      case 'deliverer':
+        return UserRole.deliverer;
+      case 'admin':
+        return UserRole.admin;
+      case 'customer':
+      default:
+        return UserRole.customer;
     }
   }
 }

@@ -185,7 +185,7 @@ lib/
 │   └── inventory_provider.dart     # Inventory management
 ├── screens/
 │   ├── customer/
-│   │   └── payment_screen.dart     # Payment interface
+│   │   └── payment_screen.dart           # Payment interface
 │   ├── store/
 │   │   ├── store_analytics_screen.dart
 │   │   └── inventory_management_screen.dart

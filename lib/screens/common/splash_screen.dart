@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';  // CAMBIO
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -19,14 +20,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _setupAnimations();
-    _initalizeAuthState();
-    // _checkAuthStatus();
+    // Evitar el error de Riverpod usando postFrameCallback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initalizeAuthState();
+    });
   }
-  // Comentado para evitar errores si no se llama, puedes descomentarlo si lo necesitas
+  
   void _initalizeAuthState() async {
     final authProvider = ref.read(authNotifierProvider.notifier);
-    final success = await authProvider.login("2022031111@ciberecus.mx", "123456");
-    print(success);
+    final success = await authProvider.login("2022031111", "123456");
+    print("Login success: $success");
+    
+    // Después del login, navegar a la pantalla apropiada
+    if (mounted) {
+      await Future.delayed(Duration(seconds: 1)); // Mostrar splash un momento
+      _checkAuthStatus();
+    }
   }
 
  void _setupAnimations() {
@@ -53,22 +62,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   void _checkAuthStatus() async {
-    // CAMBIO: usar ref.read en lugar de Provider.of
-
-    await Future.delayed(Duration(seconds: 3));
-
     await ref.read(authNotifierProvider.notifier).checkAuthStatus();
 
     if (!mounted) return;
 
     // CAMBIO: usar ref.read para obtener el estado
     final authState = ref.read(authNotifierProvider);
-    print("Tratando de iniciar sesión $authState");
+    print("Estado de autenticación: $authState");
     
     if (authState.isAuthenticated) {
       _redirectBasedOnRole(authState.user!.role.name);
     } else {
-      Navigator.pushReplacementNamed(context, '/login');
+      context.go('/login');
     }
   }
 
@@ -76,7 +81,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     String route;
     switch (role) {
       case 'customer':
-        route = '/customer-home';
+        route = '/customer';
         break;
       case 'store':
         route = '/store-dashboard';
@@ -91,7 +96,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         route = '/login';
     }
 
-    Navigator.pushReplacementNamed(context, route);
+    context.go(route);
   }
   @override
   void dispose() {
