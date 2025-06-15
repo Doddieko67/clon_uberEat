@@ -41,10 +41,7 @@ class _StoreAnalyticsScreenState extends ConsumerState<StoreAnalyticsScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
-        ),
+        automaticallyImplyLeading: false,
         title: Text(
           'Analytics',
           style: TextStyle(

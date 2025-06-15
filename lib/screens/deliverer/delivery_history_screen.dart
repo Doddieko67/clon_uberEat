@@ -265,10 +265,7 @@ class _DeliveryHistoryScreenState extends State<DeliveryHistoryScreen>
     return AppBar(
       backgroundColor: AppColors.surface,
       elevation: 0,
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
-      ),
+      automaticallyImplyLeading: false,
       title: Text(
         'Historial de Entregas',
         style: TextStyle(
