@@ -16,6 +16,8 @@ import '../screens/customer/checkout_screen.dart';
 import '../screens/customer/order_tracking_screen.dart';
 import '../screens/store/store_dashboard_screen.dart';
 import '../screens/store/store_onboarding_screen.dart';
+import '../screens/store/create_store_screen.dart';
+import '../screens/store/join_store_screen.dart';
 import '../screens/store/store_wrapper_screen.dart';
 import '../screens/store/order_management_screen.dart';
 import '../screens/store/menu_management_screen.dart';
@@ -184,6 +186,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/store/onboarding',
       builder: (context, state) => const StoreOnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/store/create',
+      builder: (context, state) => const CreateStoreScreen(),
+    ),
+    GoRoute(
+      path: '/store/join',
+      builder: (context, state) => const JoinStoreScreen(),
     ),
 
     // Store routes with shell navigation

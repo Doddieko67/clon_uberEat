@@ -29,6 +29,7 @@ class _StoreProfileSettingsScreenState extends State<StoreProfileSettingsScreen>
     'logo': Icons.restaurant,
     'rating': 4.8,
     'isVerified': true,
+    'invitationCode': '',
   };
 
   // Horarios de operación
@@ -68,6 +69,7 @@ class _StoreProfileSettingsScreenState extends State<StoreProfileSettingsScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _loadStoreData();
+    _generateInvitationCodeIfNeeded();
   }
 
   void _loadStoreData() {
@@ -76,6 +78,31 @@ class _StoreProfileSettingsScreenState extends State<StoreProfileSettingsScreen>
     _phoneController.text = _storeData['phone'] ?? '';
     _emailController.text = _storeData['email'] ?? '';
     _addressController.text = _storeData['address'] ?? '';
+  }
+
+  void _generateInvitationCodeIfNeeded() {
+    if (_storeData['invitationCode'] == null || _storeData['invitationCode'].isEmpty) {
+      _generateNewInvitationCode();
+    }
+  }
+
+  void _generateNewInvitationCode() {
+    // Generate a 6-character alphanumeric code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().millisecondsSinceEpoch;
+    String code = '';
+    
+    for (int i = 0; i < 6; i++) {
+      final index = (random + i * 1000) % chars.length;
+      code += chars[index];
+    }
+    
+    setState(() {
+      _storeData['invitationCode'] = code;
+    });
+    
+    // In a real app, save this to Firestore
+    // FirebaseFirestore.instance.collection('stores').doc(storeId).update({'invitationCode': code});
   }
 
   @override
@@ -469,6 +496,158 @@ class _StoreProfileSettingsScreenState extends State<StoreProfileSettingsScreen>
                   color: AppColors.textSecondary,
                 ),
               ),
+            ),
+          ]),
+
+          SizedBox(height: 24),
+
+          // Invitation Code Section
+          Text(
+            'Código de Invitación',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+
+          SizedBox(height: 16),
+
+          _buildFormCard([
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: AppGradients.secondary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Comparte este código con empleados',
+                    style: TextStyle(
+                      color: AppColors.textOnSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _storeData['invitationCode'] ?? 'XXXXXX',
+                        style: TextStyle(
+                          color: AppColors.textOnSecondary,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 8,
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      IconButton(
+                        onPressed: () {
+                          // Copy to clipboard
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: AppColors.textPrimary),
+                                  SizedBox(width: 8),
+                                  Text('Código copiado al portapapeles'),
+                                ],
+                              ),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.copy,
+                          color: AppColors.textOnSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: AppColors.surface,
+                          title: Text(
+                            'Generar Nuevo Código',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
+                          content: Text(
+                            '¿Estás seguro? El código anterior dejará de funcionar.',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                'Cancelar',
+                                style: TextStyle(color: AppColors.textSecondary),
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _generateNewInvitationCode();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Nuevo código generado'),
+                                    backgroundColor: AppColors.success,
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                              ),
+                              child: Text(
+                                'Generar',
+                                style: TextStyle(color: AppColors.textOnPrimary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.refresh, size: 16),
+                    label: Text('Nuevo Código'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.warning,
+                      side: BorderSide(color: AppColors.warning),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // Share code
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Compartir código próximamente'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.share, size: 16),
+                    label: Text('Compartir'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ]),
 

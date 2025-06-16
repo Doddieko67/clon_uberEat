@@ -202,6 +202,9 @@ class StoreNotifier extends StateNotifier<List<Store>> {
     try {
       final firestore = FirebaseFirestore.instance;
       
+      // Generate invitation code
+      final invitationCode = _generateInvitationCode();
+      
       // Convert store to map for Firestore
       final storeData = {
         'id': store.id,
@@ -228,6 +231,7 @@ class StoreNotifier extends StateNotifier<List<Store>> {
         'deliveryTime': store.deliveryTime,
         'specialOffer': store.specialOffer,
         'hasSpecialOffer': store.hasSpecialOffer,
+        'invitationCode': invitationCode,
         'createdAt': FieldValue.serverTimestamp(),
       };
 
@@ -240,6 +244,19 @@ class StoreNotifier extends StateNotifier<List<Store>> {
     } catch (e) {
       throw Exception('Error al crear la tienda: $e');
     }
+  }
+
+  String _generateInvitationCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().millisecondsSinceEpoch;
+    String code = '';
+    
+    for (int i = 0; i < 6; i++) {
+      final index = (random + i * 1000) % chars.length;
+      code += chars[index];
+    }
+    
+    return code;
   }
 
   Map<String, dynamic> _operatingHoursToMap(OperatingHours hours) {
