@@ -19,6 +19,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
@@ -35,10 +39,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Force production-like behavior for Google Maps
+            manifestPlaceholders["enableGoogleMaps"] = true
+            buildConfigField("String", "MAPS_API_KEY", "\"AIzaSyA2Iani8wy51jBPnXQpTG0_IK9oAEWmeiE\"")
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["enableGoogleMaps"] = true
+            buildConfigField("String", "MAPS_API_KEY", "\"AIzaSyA2Iani8wy51jBPnXQpTG0_IK9oAEWmeiE\"")
         }
     }
 }
