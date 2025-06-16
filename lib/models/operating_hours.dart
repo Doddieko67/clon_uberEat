@@ -22,6 +22,43 @@ class TimeRange {
   }
 }
 
+// Extended class for more detailed day operations
+class DayHours {
+  final bool isOpen;
+  final String? openTime;
+  final String? closeTime;
+
+  DayHours({
+    required this.isOpen,
+    this.openTime,
+    this.closeTime,
+  });
+
+  // Convert to TimeRange for compatibility
+  TimeRange toTimeRange() {
+    return TimeRange(
+      open: openTime ?? '00:00',
+      close: closeTime ?? '00:00',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'isOpen': isOpen,
+      'openTime': openTime,
+      'closeTime': closeTime,
+    };
+  }
+
+  factory DayHours.fromMap(Map<String, dynamic> map) {
+    return DayHours(
+      isOpen: map['isOpen'] as bool? ?? false,
+      openTime: map['openTime'] as String?,
+      closeTime: map['closeTime'] as String?,
+    );
+  }
+}
+
 class OperatingHours {
   final TimeRange monday;
   final TimeRange tuesday;
@@ -52,6 +89,27 @@ class OperatingHours {
       friday: timeRange,
       saturday: timeRange,
       sunday: timeRange,
+    );
+  }
+
+  // Constructor using DayHours for more control
+  factory OperatingHours.fromDayHours({
+    required DayHours monday,
+    required DayHours tuesday,
+    required DayHours wednesday,
+    required DayHours thursday,
+    required DayHours friday,
+    required DayHours saturday,
+    required DayHours sunday,
+  }) {
+    return OperatingHours(
+      monday: monday.toTimeRange(),
+      tuesday: tuesday.toTimeRange(),
+      wednesday: wednesday.toTimeRange(),
+      thursday: thursday.toTimeRange(),
+      friday: friday.toTimeRange(),
+      saturday: saturday.toTimeRange(),
+      sunday: sunday.toTimeRange(),
     );
   }
 

@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:clonubereat/models/store_model.dart';
 import 'package:clonubereat/models/menu_item_model.dart';
 import 'package:clonubereat/models/category_model.dart';
 import 'package:clonubereat/models/user_model.dart';
 import 'package:clonubereat/models/operating_hours.dart';
+import 'auth_provider.dart';
 
 class StoreNotifier extends StateNotifier<List<Store>> {
   StoreNotifier() : super([]) {
@@ -194,6 +196,141 @@ class StoreNotifier extends StateNotifier<List<Store>> {
   List<String> getAvailableCategories() {
     return state.map((store) => store.category).toSet().toList();
   }
+
+  // Firestore methods
+  Future<void> createStore(Store store) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      
+      // Convert store to map for Firestore
+      final storeData = {
+        'id': store.id,
+        'name': store.name,
+        'phone': store.phone,
+        'boletaNumber': store.boletaNumber,
+        'role': store.role.toString().split('.').last,
+        'status': store.status.toString().split('.').last,
+        'lastActive': store.lastActive.toIso8601String(),
+        'photoUrl': store.photoUrl,
+        'notes': store.notes,
+        'storeName': store.storeName,
+        'address': store.address,
+        'category': store.category,
+        'rating': store.rating,
+        'reviewCount': store.reviewCount,
+        'openingHours': _operatingHoursToMap(store.openingHours),
+        'isOpen': store.isOpen,
+        'bannerUrl': store.bannerUrl,
+        'description': store.description,
+        'deliveryFee': store.deliveryFee,
+        'deliveryTime': store.deliveryTime,
+        'specialOffer': store.specialOffer,
+        'hasSpecialOffer': store.hasSpecialOffer,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      // Save to Firestore
+      await firestore.collection('stores').doc(store.id).set(storeData);
+      
+      // Update local state
+      state = [...state, store];
+      
+    } catch (e) {
+      throw Exception('Error al crear la tienda: $e');
+    }
+  }
+
+  Map<String, dynamic> _operatingHoursToMap(OperatingHours hours) {
+    return {
+      'monday': _timeRangeToMap(hours.monday),
+      'tuesday': _timeRangeToMap(hours.tuesday),
+      'wednesday': _timeRangeToMap(hours.wednesday),
+      'thursday': _timeRangeToMap(hours.thursday),
+      'friday': _timeRangeToMap(hours.friday),
+      'saturday': _timeRangeToMap(hours.saturday),
+      'sunday': _timeRangeToMap(hours.sunday),
+    };
+  }
+
+  Map<String, dynamic> _timeRangeToMap(TimeRange timeRange) {
+    return {
+      'open': timeRange.open,
+      'close': timeRange.close,
+    };
+  }
+
+  Future<Store?> getStoreForUser(String userId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final doc = await firestore.collection('stores').doc(userId).get();
+      
+      if (doc.exists) {
+        return _storeFromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Store _storeFromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    
+    return Store(
+      id: data['id'],
+      name: data['name'],
+      phone: data['phone'],
+      status: UserStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == data['status'],
+        orElse: () => UserStatus.active,
+      ),
+      lastActive: DateTime.parse(data['lastActive']),
+      photoUrl: data['photoUrl'],
+      notes: data['notes'],
+      storeName: data['storeName'],
+      address: data['address'],
+      category: data['category'],
+      rating: (data['rating'] as num).toDouble(),
+      reviewCount: data['reviewCount'],
+      openingHours: _operatingHoursFromMap(data['openingHours']),
+      isOpen: data['isOpen'],
+      bannerUrl: data['bannerUrl'],
+      description: data['description'],
+      deliveryFee: (data['deliveryFee'] as num).toDouble(),
+      deliveryTime: data['deliveryTime'],
+      specialOffer: data['specialOffer'],
+      hasSpecialOffer: data['hasSpecialOffer'] ?? false,
+    );
+  }
+
+  OperatingHours _operatingHoursFromMap(Map<String, dynamic> data) {
+    return OperatingHours(
+      monday: _timeRangeFromMap(data['monday']),
+      tuesday: _timeRangeFromMap(data['tuesday']),
+      wednesday: _timeRangeFromMap(data['wednesday']),
+      thursday: _timeRangeFromMap(data['thursday']),
+      friday: _timeRangeFromMap(data['friday']),
+      saturday: _timeRangeFromMap(data['saturday']),
+      sunday: _timeRangeFromMap(data['sunday']),
+    );
+  }
+
+  TimeRange _timeRangeFromMap(Map<String, dynamic> data) {
+    // Handle both DayHours format and TimeRange format
+    if (data.containsKey('isOpen')) {
+      // DayHours format from Firestore
+      return TimeRange(
+        open: data['openTime'] ?? '00:00',
+        close: data['closeTime'] ?? '00:00',
+      );
+    } else {
+      // TimeRange format
+      return TimeRange(
+        open: data['open'] ?? '00:00',
+        close: data['close'] ?? '00:00',
+      );
+    }
+  }
 }
 
 class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
@@ -345,6 +482,17 @@ class MenuItemNotifier extends StateNotifier<Map<String, List<MenuItem>>> {
 // Providers principales
 final storeProvider = StateNotifierProvider<StoreNotifier, List<Store>>((ref) {
   return StoreNotifier();
+});
+
+// Provider to check if current user has a store
+final userStoreProvider = FutureProvider<Store?>((ref) async {
+  final auth = ref.watch(authNotifierProvider);
+  final userId = auth.user?.id;
+  
+  if (userId == null) return null;
+  
+  final storeNotifier = ref.read(storeProvider.notifier);
+  return await storeNotifier.getStoreForUser(userId);
 });
 
 final menuItemProvider = StateNotifierProvider<MenuItemNotifier, Map<String, List<MenuItem>>>((ref) {

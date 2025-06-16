@@ -15,6 +15,8 @@ import '../screens/customer/store_detail_screen.dart';
 import '../screens/customer/checkout_screen.dart';
 import '../screens/customer/order_tracking_screen.dart';
 import '../screens/store/store_dashboard_screen.dart';
+import '../screens/store/store_onboarding_screen.dart';
+import '../screens/store/store_wrapper_screen.dart';
 import '../screens/store/order_management_screen.dart';
 import '../screens/store/menu_management_screen.dart';
 import '../screens/store/store_analytics_screen.dart';
@@ -161,13 +163,19 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const NotificationsScreen(userRole: 'deliverer'),
     ),
 
+    // Store onboarding (outside shell for full screen)
+    GoRoute(
+      path: '/store/onboarding',
+      builder: (context, state) => const StoreOnboardingScreen(),
+    ),
+
     // Store routes with shell navigation
     ShellRoute(
       builder: (context, state, child) => StoreShell(child: child),
       routes: [
         GoRoute(
           path: '/store',
-          builder: (context, state) => StoreDashboardScreen(),
+          builder: (context, state) => const StoreWrapperScreen(),
           redirect: (context, state) => _roleGuard(context, state, UserRole.store),
         ),
         GoRoute(
