@@ -181,7 +181,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen>
       case 'cancelado':
         return 'Cancelado';
       default:
-        return 'Desconocido';
+        return 'Pendiente';
     }
   }
 

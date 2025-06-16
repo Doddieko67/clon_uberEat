@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './base_layout.dart';
-import './customer_bottom_navigation.dart';
+import '../customer/customer_bottom_navigation.dart';
 import '../../providers/cart_provider.dart';
 
 class CustomerLayout extends BaseLayout {

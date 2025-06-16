@@ -56,5 +56,7 @@
 		<string>https</string>
 		<string>http</string>
 	</array>
+	<key>GMSAPIKey</key>
+	<string>AIzaSyA2Iani8wy51jBPnXQpTG0_IK9oAEWmeiE</string>
 </dict>
 </plist>

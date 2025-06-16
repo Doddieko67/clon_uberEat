@@ -124,6 +124,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            onPressed: () => context.go('/debug/places'),
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.textOnPrimary,
+            icon: Icon(Icons.search),
+            label: Text('Test Places'),
+            heroTag: "places",
+          ),
+          SizedBox(height: 8),
+          FloatingActionButton.extended(
+            onPressed: () => context.go('/debug/maps'),
+            backgroundColor: AppColors.secondary,
+            foregroundColor: AppColors.textOnSecondary,
+            icon: Icon(Icons.map),
+            label: Text('Test Maps'),
+            heroTag: "maps",
+          ),
+        ],
+      ),
     );
   }
 

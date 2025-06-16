@@ -32,9 +32,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
   
   void _initalizeAuthState() async {
-    final authProvider = ref.read(authNotifierProvider.notifier);
-    final success = await authProvider.login("2022031111", "123456");
-    print("Login success: $success");
+    // final authProvider = ref.read(authNotifierProvider.notifier);
+    // final success = await authProvider.login("2022031111", "123456");
+    // print("Login success: $success");
     
     // Después del login, navegar a la pantalla apropiada
     if (mounted) {

@@ -8,6 +8,7 @@ import '../../providers/store_provider.dart';
 import '../../models/store_model.dart';
 import '../../models/user_model.dart';
 import '../../models/operating_hours.dart';
+import '../../models/location_model.dart';
 import '../../widgets/common/location_picker_widget.dart';
 
 class StoreOnboardingScreen extends ConsumerStatefulWidget {

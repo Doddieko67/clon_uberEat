@@ -25,6 +25,8 @@ import '../screens/deliverer/deliverer_dashboard_screen.dart';
 import '../screens/deliverer/delivery_details_screen.dart';
 import '../screens/deliverer/delivery_history_screen.dart';
 import '../screens/deliverer/deliverer_location_screen.dart';
+import '../screens/debug/maps_test_screen.dart';
+import '../screens/debug/places_test_screen.dart';
 import 'customer_shell.dart';
 import 'store_shell.dart';
 import 'deliverer_shell.dart';
@@ -44,8 +46,8 @@ String? _authGuard(BuildContext context, GoRouterState state) {
   final authState = container.read(authNotifierProvider);
   final currentPath = state.uri.path;
   
-  // Allow access to auth routes
-  if (currentPath == '/' || currentPath == '/login' || currentPath == '/register') {
+  // Allow access to auth routes and debug routes
+  if (currentPath == '/' || currentPath == '/login' || currentPath == '/register' || currentPath.startsWith('/debug')) {
     return null;
   }
   
@@ -103,6 +105,16 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => RegisterScreen(),
+    ),
+
+    // Debug routes (accesible sin autenticación)
+    GoRoute(
+      path: '/debug/maps',
+      builder: (context, state) => MapsTestScreen(),
+    ),
+    GoRoute(
+      path: '/debug/places',
+      builder: (context, state) => PlacesTestScreen(),
     ),
 
     // Customer routes with shell navigation

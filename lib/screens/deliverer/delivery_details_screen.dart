@@ -450,7 +450,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
   }
   
   String _getStoreLocation() {
-    return _order?.storeLocation ?? 'Ubicación de tienda';
+    return _order?.displayStoreAddress ?? 'Ubicación de tienda';
   }
   
   String _getCustomerPhone() {
@@ -686,17 +686,19 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
             children: [
               Icon(Icons.access_time, color: AppColors.textOnPrimary, size: 16),
               SizedBox(width: 8),
-              Text(
-                'Tiempo estimado: ${_getEstimatedTime()}',
-                style: TextStyle(fontSize: 14, color: AppColors.textOnPrimary),
+              Expanded(
+                child: Text(
+                  'Tiempo estimado: ${_getEstimatedTime()}',
+                  style: TextStyle(fontSize: 14, color: AppColors.textOnPrimary),
+                ),
               ),
-              Spacer(),
+              SizedBox(width: 8),
               Icon(
                 Icons.directions_walk,
                 color: AppColors.textOnPrimary,
                 size: 16,
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 4),
               Text(
                 _getDistance(),
                 style: TextStyle(fontSize: 14, color: AppColors.textOnPrimary),

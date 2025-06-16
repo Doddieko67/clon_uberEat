@@ -155,7 +155,7 @@ class _StoreDashboardScreenState extends ConsumerState<StoreDashboardScreen>
       case 'completado':
         return 'Completado';
       default:
-        return 'Desconocido';
+        return 'Pendiente';
     }
   }
 

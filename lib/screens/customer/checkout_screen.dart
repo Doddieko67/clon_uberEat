@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
 import '../../models/order_item_model.dart';
+import '../../models/location_model.dart';
+import '../../widgets/customer/address_selector_widget.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   @override
@@ -15,40 +17,40 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
-  int _selectedAddressIndex = 0;
+  LocationData? _selectedLocation;
   int _selectedPaymentIndex = 0;
   final _instructionsController = TextEditingController();
   bool _isProcessing = false;
-  bool _shareLocationEnabled = false; // Nueva variable para GPS
+  bool _shareLocationEnabled = false;
 
-  // Los datos del pedido ahora vienen del carrito real
+  @override
+  void initState() {
+    super.initState();
+    // Set default location
+    _selectedLocation = LocationData(
+      address: 'Dormitorio Estudiantil, Edificio A, Cuarto 205',
+      latitude: 25.6866,
+      longitude: -100.3161,
+      formattedAddress: 'Edificio A, Cuarto 205, Ciudad Universitaria',
+    );
+  }
 
-  final List<Map<String, dynamic>> _addresses = [
-    {
-      'id': '1',
-      'title': 'Dormitorio Estudiantil',
-      'address': 'Edificio A, Cuarto 205\nCiudad Universitaria',
-      'isDefault': true,
-      'icon': Icons.school,
-      'deliveryTime': '15-20 min',
-    },
-    {
-      'id': '2',
-      'title': 'Biblioteca Central',
-      'address': 'Planta Baja, Zona de Estudio\nCiudad Universitaria',
-      'isDefault': false,
-      'icon': Icons.local_library,
-      'deliveryTime': '10-15 min',
-    },
-    {
-      'id': '3',
-      'title': 'Oficina - Coordinación',
-      'address': 'Edificio Administrativo, Piso 3\nOficina 301',
-      'isDefault': false,
-      'icon': Icons.work,
-      'deliveryTime': '12-18 min',
-    },
-  ];
+  String _getEstimatedDeliveryTime() {
+    if (_selectedLocation == null) return '15-20 min';
+    
+    // Calculate estimated delivery time based on distance
+    // Using default store location for calculation
+    final storeLocation = LocationData(
+      address: 'Tienda',
+      latitude: 25.6876,
+      longitude: -100.3171,
+    );
+    
+    final distance = storeLocation.distanceTo(_selectedLocation!);
+    final minutes = ((distance / 100).ceil() + 10).clamp(8, 45);
+    
+    return '${minutes}-${minutes + 5} min';
+  }
 
   final List<Map<String, dynamic>> _paymentMethods = [
     {
@@ -159,12 +161,33 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
 
     try {
+      // Validate selected location
+      if (_selectedLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Por favor selecciona una dirección de entrega'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        setState(() {
+          _isProcessing = false;
+        });
+        return;
+      }
+
       // Crear la orden
       final orderId = 'ORD_${DateTime.now().millisecondsSinceEpoch}';
-      final selectedAddress = _addresses[_selectedAddressIndex];
       
       // Convertir CartItems a OrderItems
       final orderItems = cart.items.map((cartItem) => cartItem.toOrderItem()).toList();
+      
+      // Create store location data (for now using a default - in real app would come from store data)
+      final storeLocation = LocationData(
+        address: cart.store?.address ?? 'Ubicación de tienda',
+        latitude: 25.6876, // Default store coordinates
+        longitude: -100.3171,
+        formattedAddress: cart.store?.address ?? 'Ubicación de tienda',
+      );
       
       final order = Order(
         id: orderId,
@@ -172,11 +195,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         customerName: authState.user?.name ?? 'Cliente',
         storeId: cart.storeId ?? '',
         storeName: cart.store?.name ?? 'Tienda',
-        storeLocation: cart.store?.address ?? 'Ubicación de tienda',
+        storeLocation: storeLocation,
         items: orderItems,
         totalAmount: cart.total,
         status: OrderStatus.pending,
-        deliveryAddress: '${selectedAddress['title']}\n${selectedAddress['address']}',
+        deliveryLocation: _selectedLocation,
+        deliveryAddress: _selectedLocation!.displayAddress, // Legacy field for backward compatibility
         orderTime: DateTime.now(),
         specialInstructions: _instructionsController.text.isNotEmpty ? _instructionsController.text : null,
         isPriority: false, // TODO: Add priority logic based on delivery time or customer tier
@@ -393,152 +417,46 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
           SizedBox(height: 16),
 
-          ...(_addresses.asMap().entries.map((entry) {
-            final index = entry.key;
-            final address = entry.value;
-            final isSelected = index == _selectedAddressIndex;
-
-            return Container(
-              margin: EdgeInsets.only(bottom: 12),
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedAddressIndex = index;
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.primaryWithOpacity(0.1)
-                            : AppColors.surfaceVariant,
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.border,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              address['icon'],
-                              color: AppColors.textOnPrimary,
-                              size: 20,
-                            ),
-                          ),
-
-                          SizedBox(width: 12),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  address['title'],
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : AppColors.textPrimary,
-                                  ),
-                                ),
-
-                                SizedBox(height: 4),
-
-                                Text(
-                                  address['address'],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textSecondary,
-                                    height: 1.3,
-                                  ),
-                                ),
-
-                                SizedBox(height: 4),
-
-                                Text(
-                                  'Entrega en: ${address['deliveryTime']}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.success,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          if (isSelected)
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.primary,
-                              size: 24,
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    if (address['isDefault'])
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(12),
-                              bottomLeft: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Principal',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textOnSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          }).toList()),
-
-          SizedBox(height: 8),
-
-          TextButton.icon(
-            onPressed: () {
-              // TODO: Agregar nueva dirección
+          AddressSelectorWidget(
+            selectedLocation: _selectedLocation,
+            onLocationSelected: (LocationData location) {
+              setState(() {
+                _selectedLocation = location;
+              });
             },
-            icon: Icon(Icons.add, color: AppColors.primary),
-            label: Text(
-              'Agregar nueva dirección',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
+            title: 'Dirección de entrega',
+            subtitle: 'Selecciona dónde quieres recibir tu pedido',
+          ),
+
+          if (_selectedLocation != null) ...[
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.success.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    color: AppColors.success,
+                    size: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Tiempo estimado: ${_getEstimatedDeliveryTime()}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

@@ -151,7 +151,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
       case 'cancelado':
         return 'Cancelado';
       default:
-        return 'Desconocido';
+        return 'Pendiente';
     }
   }
 

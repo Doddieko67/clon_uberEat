@@ -1,9 +1,8 @@
 // widgets/layouts/store_layout.dart - LAYOUT DE TIENDA
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../base_layout.dart';
-import '../store_bottom_navigation.dart';
-import '../../providers/store_provider.dart';
+import '../layouts/base_layout.dart';
+import '../store/store_bottom_navigation.dart';
 
 class StoreLayout extends BaseLayout {
   const StoreLayout({Key? key, required Widget child, String? currentRoute})

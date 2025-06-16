@@ -6,6 +6,7 @@ import 'dart:async';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/deliverer_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/order_model.dart';
 
@@ -24,14 +25,6 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
 
   Timer? _refreshTimer;
   bool _isAvailable = true;
-
-  // Datos simulados del repartidor
-  final Map<String, dynamic> _delivererStats = {
-    'todayDeliveries': 12,
-    'todayEarnings': 240.0,
-    'averageRating': 4.8,
-    'completionRate': 98.5,
-  };
 
   @override
   void initState() {
@@ -74,6 +67,18 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         });
       }
     });
+  }
+
+  String _getDistanceText(Order order) {
+    final distance = order.deliveryDistance;
+    if (distance != null) {
+      if (distance >= 1000) {
+        return '${(distance / 1000).toStringAsFixed(1)}km';
+      } else {
+        return '${distance.toInt()}m';
+      }
+    }
+    return '300m'; // Fallback
   }
 
   void _toggleAvailability() {
@@ -162,38 +167,64 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     final authState = ref.watch(authNotifierProvider);
     final currentUserId = authState.user?.id;
     
+    if (currentUserId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: Text('Error: Usuario no autenticado'),
+        ),
+      );
+    }
+
+    final delivererStatsValue = ref.watch(calculatedDelivererStatsProvider(currentUserId));
+    
     return ordersAsyncValue.when(
       data: (orders) {
-        return _buildScaffoldWithOrders(orders, currentUserId);
+        return delivererStatsValue.when(
+          data: (stats) => _buildScaffoldWithData(orders, currentUserId, stats),
+          loading: () => _buildLoadingScaffold(),
+          error: (error, stack) => _buildErrorScaffold(error, () {
+            ref.refresh(ordersProvider);
+            ref.refresh(calculatedDelivererStatsProvider(currentUserId));
+          }),
+        );
       },
-      loading: () => Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
+      loading: () => _buildLoadingScaffold(),
+      error: (error, stack) => _buildErrorScaffold(error, () => ref.refresh(ordersProvider)),
+    );
+  }
+
+  Widget _buildLoadingScaffold() {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
       ),
-      error: (error, stack) => Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error, size: 64, color: AppColors.error),
-              SizedBox(height: 16),
-              Text('Error al cargar pedidos: $error'),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(ordersProvider),
-                child: Text('Reintentar'),
-              ),
-            ],
-          ),
+    );
+  }
+
+  Widget _buildErrorScaffold(Object error, VoidCallback onRetry) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error, size: 64, color: AppColors.error),
+            SizedBox(height: 16),
+            Text('Error al cargar datos: $error'),
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: Text('Reintentar'),
+            ),
+          ],
         ),
       ),
     );
   }
   
-  Widget _buildScaffoldWithOrders(List<Order> allOrders, String? currentUserId) {
+  Widget _buildScaffoldWithData(List<Order> allOrders, String currentUserId, DelivererStats stats) {
     final availableOrders = allOrders.where((order) => 
       order.delivererId == null &&
       order.status == OrderStatus.pending
@@ -204,14 +235,14 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(availableOrders),
+            _buildHeader(availableOrders, stats),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStatsCards(),
+                    _buildStatsCards(stats),
                     SizedBox(height: 24),
                     _buildActiveDeliveries(allOrders, currentUserId),
                     SizedBox(height: 24),
@@ -228,7 +259,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildHeader(List<Order> availableOrders) {
+  Widget _buildHeader(List<Order> availableOrders, DelivererStats stats) {
     final authState = ref.watch(authNotifierProvider);
     final user = authState.user;
     
@@ -284,7 +315,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                             ),
                             SizedBox(width: 4),
                             Text(
-                              '${_delivererStats['averageRating']} • ${_delivererStats['todayDeliveries']} entregas hoy',
+                              '${stats.averageRating.toStringAsFixed(1)} • ${stats.todayDeliveries} entregas hoy',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textSecondary,
@@ -406,13 +437,13 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         );
   }
 
-  Widget _buildStatsCards() {
+  Widget _buildStatsCards(DelivererStats stats) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             'Entregas Hoy',
-            '${_delivererStats['todayDeliveries']}',
+            '${stats.todayDeliveries}',
             Icons.local_shipping,
             AppColors.primary,
           ),
@@ -421,7 +452,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
         Expanded(
           child: _buildStatCard(
             'Ganancias',
-            '\$${_delivererStats['todayEarnings'].toStringAsFixed(0)}',
+            '\$${stats.todayEarnings.toStringAsFixed(0)}',
             Icons.attach_money,
             AppColors.success,
           ),
@@ -614,7 +645,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
               SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  order.deliveryAddress ?? 'Dirección no disponible',
+                  order.displayDeliveryAddress,
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -622,7 +653,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                 ),
               ),
               Text(
-                'ETA: 8-12 min', // TODO: Calculate based on distance
+                'ETA: ${order.estimatedDeliveryMinutes} min',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.primary,
@@ -914,7 +945,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      order.storeLocation ?? 'Ubicación de tienda',
+                      order.displayStoreAddress,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -934,7 +965,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      order.deliveryAddress ?? 'Dirección no disponible',
+                      order.displayDeliveryAddress,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -962,7 +993,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '300m', // TODO: Calculate based on location
+                          _getDistanceText(order),
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -988,7 +1019,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                         ),
                         SizedBox(width: 4),
                         Text(
-                          '8-12 min', // TODO: Calculate based on distance
+                          '${order.estimatedDeliveryMinutes} min',
                           style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,

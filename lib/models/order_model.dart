@@ -1,5 +1,6 @@
 
 import 'package:clonubereat/models/order_item_model.dart';
+import 'package:clonubereat/models/location_model.dart';
 
 enum OrderStatus {
   pending,
@@ -15,12 +16,13 @@ class Order {
   final String? customerName; // Optional cached customer name
   final String storeId;
   final String? storeName; // Optional cached store name
-  final String? storeLocation; // Optional store location
+  final LocationData? storeLocation; // Store location with coordinates
   final String? delivererId;
   final List<OrderItem> items;
   final double totalAmount;
   final OrderStatus status;
-  final String? deliveryAddress;
+  final LocationData? deliveryLocation; // Delivery location with coordinates
+  final String? deliveryAddress; // Legacy field for backward compatibility
   final DateTime orderTime;
   final DateTime? deliveryTime;
   final int? rating;
@@ -43,6 +45,7 @@ class Order {
     required this.items,
     required this.totalAmount,
     required this.status,
+    this.deliveryLocation,
     this.deliveryAddress,
     required this.orderTime,
     this.deliveryTime,
@@ -62,11 +65,12 @@ class Order {
     String? customerName,
     String? storeId,
     String? storeName,
-    String? storeLocation,
+    LocationData? storeLocation,
     String? delivererId,
     List<OrderItem>? items,
     double? totalAmount,
     OrderStatus? status,
+    LocationData? deliveryLocation,
     String? deliveryAddress,
     DateTime? orderTime,
     DateTime? deliveryTime,
@@ -90,6 +94,7 @@ class Order {
       items: items ?? this.items,
       totalAmount: totalAmount ?? this.totalAmount,
       status: status ?? this.status,
+      deliveryLocation: deliveryLocation ?? this.deliveryLocation,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       orderTime: orderTime ?? this.orderTime,
       deliveryTime: deliveryTime ?? this.deliveryTime,
@@ -111,12 +116,13 @@ class Order {
       'customerName': customerName,
       'storeId': storeId,
       'storeName': storeName,
-      'storeLocation': storeLocation,
+      'storeLocation': storeLocation?.toMap(),
       'delivererId': delivererId,
       'items': items.map((item) => item.toMap()).toList(),
       'totalAmount': totalAmount,
       'status': status.toString().split('.').last,
-      'deliveryAddress': deliveryAddress,
+      'deliveryLocation': deliveryLocation?.toMap(),
+      'deliveryAddress': deliveryAddress ?? deliveryLocation?.displayAddress,
       'orderTime': orderTime.toIso8601String(),
       'deliveryTime': deliveryTime?.toIso8601String(),
       'rating': rating,
@@ -137,7 +143,7 @@ class Order {
       customerName: map['customerName'] as String?,
       storeId: map['storeId'] as String,
       storeName: map['storeName'] as String?,
-      storeLocation: map['storeLocation'] as String?,
+      storeLocation: _parseLocationData(map['storeLocation']),
       delivererId: map['delivererId'] as String?,
       items: (map['items'] as List<dynamic>)
           .map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
@@ -145,6 +151,7 @@ class Order {
       totalAmount: (map['totalAmount'] as num).toDouble(),
       status: OrderStatus.values.firstWhere(
           (e) => e.toString().split('.').last == map['status'] as String),
+      deliveryLocation: _parseLocationData(map['deliveryLocation']),
       deliveryAddress: map['deliveryAddress'] as String?,
       orderTime: DateTime.parse(map['orderTime'] as String),
       deliveryTime: map['deliveryTime'] != null
@@ -161,5 +168,84 @@ class Order {
           ? DateTime.parse(map['lastLocationUpdate'] as String)
           : null,
     );
+  }
+
+  // Helper method to parse location data from different formats (backwards compatibility)
+  static LocationData? _parseLocationData(dynamic locationData) {
+    if (locationData == null) return null;
+    
+    if (locationData is Map<String, dynamic>) {
+      // New format: LocationData object
+      return LocationData.fromMap(locationData);
+    } else if (locationData is String) {
+      // Legacy format: String address - create LocationData with default coordinates
+      return LocationData(
+        address: locationData,
+        latitude: 25.6876, // Default coordinates (Monterrey, México)
+        longitude: -100.3171,
+        formattedAddress: locationData,
+      );
+    }
+    
+    return null;
+  }
+
+  // Helper methods for location handling
+  String get displayDeliveryAddress {
+    return deliveryLocation?.displayAddress ?? deliveryAddress ?? 'Dirección no disponible';
+  }
+
+  String get shortDeliveryAddress {
+    return deliveryLocation?.shortAddress ?? deliveryAddress?.split(',').first.trim() ?? 'Dirección no disponible';
+  }
+
+  String get displayStoreAddress {
+    return storeLocation?.displayAddress ?? 'Ubicación de tienda';
+  }
+
+  // Calculate distance between store and delivery location
+  double? get deliveryDistance {
+    if (storeLocation != null && deliveryLocation != null) {
+      return storeLocation!.distanceTo(deliveryLocation!);
+    }
+    return null;
+  }
+
+  // Get estimated delivery time based on distance (rough calculation)
+  int get estimatedDeliveryMinutes {
+    final distance = deliveryDistance;
+    if (distance != null) {
+      // Rough calculation: 1 minute per 100 meters + 10 minutes base time
+      return ((distance / 100).ceil() + 10).clamp(8, 45);
+    }
+    return 15; // Default fallback
+  }
+
+  // Check if deliverer is close to delivery location
+  bool get isDelivererNearDestination {
+    if (delivererLatitude != null && 
+        delivererLongitude != null && 
+        deliveryLocation != null) {
+      final delivererLocation = LocationData(
+        address: 'Deliverer Location',
+        latitude: delivererLatitude!,
+        longitude: delivererLongitude!,
+      );
+      final distance = delivererLocation.distanceTo(deliveryLocation!);
+      return distance <= 50; // Within 50 meters
+    }
+    return false;
+  }
+
+  // Get current deliverer location as LocationData
+  LocationData? get delivererCurrentLocation {
+    if (delivererLatitude != null && delivererLongitude != null) {
+      return LocationData(
+        address: 'Ubicación del repartidor',
+        latitude: delivererLatitude!,
+        longitude: delivererLongitude!,
+      );
+    }
+    return null;
   }
 }

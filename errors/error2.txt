@@ -1,182 +1,64 @@
-Launching lib/main.dart on 2201116PG in debug mode...
-Running Gradle task 'assembleDebug'...                           2,140ms
-✓ Built build/app/outputs/flutter-apk/app-debug.apk
-Installing build/app/outputs/flutter-apk/app-debug.apk...           7.1s
-I/flutter ( 6889): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(61)] Using the Impeller rendering backend (Vulkan).
-D/FlutterGeolocator( 6889): Attaching Geolocator to activity
-D/FlutterGeolocator( 6889): Creating service.
-D/FlutterGeolocator( 6889): Binding to location service.
-D/FlutterGeolocator( 6889): Geolocator foreground service connected
-D/FlutterGeolocator( 6889): Initializing Geolocator services
-D/FlutterGeolocator( 6889): Flutter engine connected. Connected engine count 1
-Syncing files to device 2201116PG...                                55ms
+Launching lib/main.dart on SM A055M in debug mode...
+Running Gradle task 'assembleDebug'...                          
+lib/providers/deliverer_provider.dart:4:1: Error: 'Order' is imported from both 'package:clonubereat/models/order_model.dart' and 'package:cloud_firestore_platform_interface/src/platform_interface/platform_interface_index_definitions.dart'.
+import '../models/order_model.dart';
+^^^^^
+lib/providers/deliverer_provider.dart:91:18: Error: 'Order' is imported from both 'package:clonubereat/models/order_model.dart' and 'package:cloud_firestore_platform_interface/src/platform_interface/platform_interface_index_definitions.dart'.
+          return Order.fromMap(data);
+                 ^^^^^
+lib/providers/deliverer_provider.dart:109:18: Error: 'Order' is imported from both 'package:clonubereat/models/order_model.dart' and 'package:cloud_firestore_platform_interface/src/platform_interface/platform_interface_index_definitions.dart'.
+          return Order.fromMap(data);
+                 ^^^^^
+lib/providers/deliverer_provider.dart:128:13: Error: The getter 'orderTime' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'orderTime'.
+      order.orderTime.year,
+            ^^^^^^^^^
+lib/providers/deliverer_provider.dart:129:13: Error: The getter 'orderTime' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'orderTime'.
+      order.orderTime.month,
+            ^^^^^^^^^
+lib/providers/deliverer_provider.dart:130:13: Error: The getter 'orderTime' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'orderTime'.
+      order.orderTime.day,
+            ^^^^^^^^^
+lib/providers/deliverer_provider.dart:137:13: Error: The getter 'status' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'status'.
+      order.status == OrderStatus.delivered).toList();
+            ^^^^^^
+lib/providers/deliverer_provider.dart:140:13: Error: The getter 'status' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'status'.
+      order.status == OrderStatus.delivered).toList();
+            ^^^^^^
+lib/providers/deliverer_provider.dart:146:34: Error: The getter 'totalAmount' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'totalAmount'.
+    (sum, order) => sum + (order.totalAmount * 0.1), // 10% comisión del deliverer
+                                 ^^^^^^^^^^^
+lib/providers/deliverer_provider.dart:151:72: Error: The getter 'rating' isn't defined for the class 'Object?'.
+ - 'Object' is from 'dart:core'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'rating'.
+      ? completedOrders.fold<double>(0.0, (sum, order) => sum + (order.rating ?? 5.0)) / completedOrders.length
+                                                                       ^^^^^^
+Target kernel_snapshot_program failed: Exception
 
-Flutter run key commands.
-r Hot reload. 🔥🔥🔥
-R Hot restart.
-h List all available interactive commands.
-d Detach (terminate "flutter run" but leave application running).
-c Clear the screen
-q Quit (terminate the application on the device).
 
-A Dart VM Service on 2201116PG is available at: http://127.0.0.1:36137/OUxq4vN190g=/
-I/Choreographer( 6889): Skipped 64 frames!  The application may be doing too much work on its main thread.
-W/Looper  ( 6889): PerfMonitor doFrame : time=1ms vsyncFrame=0 latency=1071ms procState=-1
-The Flutter DevTools debugger and profiler on 2201116PG is available at: http://127.0.0.1:9100?uri=http://127.0.0.1:36137/OUxq4vN190g=/
-D/VRI[MainActivity]( 6889): vri.Setup new sync id=0 syncSeqId=0
-D/ple.clonubereat( 6889): MiuiProcessManagerServiceStub setSchedFifo
-I/MiuiProcessManagerImpl( 6889): setSchedFifo pid:6889, mode:3
-E/libEGL  ( 6889): pre_cache appList: com.sina.weibo,com.ss.android.article.news,com.taobao.taobao,com.smile.gifmaker,com.ss.android.ugc.aweme,com.tencent.mm,tv.danmaku.bili,,
-E/perf_hint( 6889): Session creation failed, mPreferredRateNanos: -1
-W/Looper  ( 6889): PerfMonitor doFrame : time=30ms vsyncFrame=0 latency=381ms procState=-1 historyMsgCount=5
-D/VRI[MainActivity]( 6889): vri.reportDrawFinished syncSeqId=0 android.view.ViewRootImpl.lambda$createSyncIfNeeded$4$android-view-ViewRootImpl:4081 android.view.ViewRootImpl$$ExternalSyntheticLambda2.run:6 android.os.Handler.handleCallback:942 android.os.Handler.dispatchMessage:99 android.os.Looper.loopOnce:211 
-I/FirebaseAuth( 6889): Logging in as 2022031111@ciberecus.mx with empty reCAPTCHA token
-D/DecorView[]( 6889): onWindowFocusChanged hasWindowFocus true
-I/HandWritingStubImpl( 6889): refreshLastKeyboardType: 1
-I/HandWritingStubImpl( 6889): getCurrentKeyboardType: 1
-W/System  ( 6889): Ignoring header X-Firebase-Locale because its value was null.
-I/HandWritingStubImpl( 6889): getCurrentKeyboardType: 1
-W/DynamiteModule( 6889): Local module descriptor class for com.google.android.gms.providerinstaller.dynamite not found.
-I/DynamiteModule( 6889): Considering local module com.google.android.gms.providerinstaller.dynamite:0 and remote module com.google.android.gms.providerinstaller.dynamite:0
-W/ProviderInstaller( 6889): Failed to load providerinstaller module: No acceptable module com.google.android.gms.providerinstaller.dynamite found. Local version is 0 and remote version is 0.
-D/nativeloader( 6889): Configuring clns-6 for other apk /system/framework/com.android.media.remotedisplay.jar. target_sdk_version=36, uses_libraries=ALL, library_path=/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/lib/arm64:/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
-D/nativeloader( 6889): Extending system_exposed_libraries: libbinauralrenderer_wrapper.qti.so:libhoaeffects.qti.so:libQOC.qti.so:libmisys_jni.xiaomi.so:libupdateprof.qti.so:libthermalclient.qti.so:libQOC.qti.so:libdiag_system.qti.so:libqape.qti.so:liblistenjni.qti.so:libxiaomi_modemdumpsdx55_jni.modem.so:libxiaomi_modemdump_jni.modem.so
-W/ple.clonubereat( 6889): Loading /data/misc/apexdata/com.android.art/dalvik-cache/arm64/system@framework@com.android.location.provider.jar@classes.odex non-executable as it requires an image which we failed to load
-D/nativeloader( 6889): Configuring clns-7 for other apk /system/framework/com.android.location.provider.jar. target_sdk_version=36, uses_libraries=ALL, library_path=/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/lib/arm64:/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
-D/nativeloader( 6889): Extending system_exposed_libraries: libbinauralrenderer_wrapper.qti.so:libhoaeffects.qti.so:libQOC.qti.so:libmisys_jni.xiaomi.so:libupdateprof.qti.so:libthermalclient.qti.so:libQOC.qti.so:libdiag_system.qti.so:libqape.qti.so:liblistenjni.qti.so:libxiaomi_modemdumpsdx55_jni.modem.so:libxiaomi_modemdump_jni.modem.so
-D/nativeloader( 6889): Configuring clns-8 for other apk /data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/lib/arm64:/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.google.android.gms
-W/ProviderInstaller( 6889): Failed to report request stats: com.google.android.gms.common.security.ProviderInstallerImpl.reportRequestStats [class android.content.Context, long, long]
-W/ple.clonubereat( 6889): Accessing hidden method Ldalvik/system/VMStack;->getStackClass2()Ljava/lang/Class; (unsupported, reflection, allowed)
-E/GoogleApiManager( 6889): Failed to get service from broker. 
-E/GoogleApiManager( 6889): java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
-E/GoogleApiManager( 6889): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3033)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.createException(Parcel.java:3017)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.readException(Parcel.java:3000)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.readException(Parcel.java:2942)
-E/GoogleApiManager( 6889): 	at axtl.a(:com.google.android.gms@252234029@25.22.34 (190400-769260661):36)
-E/GoogleApiManager( 6889): 	at axrs.z(:com.google.android.gms@252234029@25.22.34 (190400-769260661):143)
-E/GoogleApiManager( 6889): 	at awyv.run(:com.google.android.gms@252234029@25.22.34 (190400-769260661):42)
-E/GoogleApiManager( 6889): 	at android.os.Handler.handleCallback(Handler.java:942)
-E/GoogleApiManager( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:99)
-E/GoogleApiManager( 6889): 	at chad.mH(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-E/GoogleApiManager( 6889): 	at chad.dispatchMessage(:com.google.android.gms@252234029@25.22.34 (190400-769260661):5)
-E/GoogleApiManager( 6889): 	at android.os.Looper.loopOnce(Looper.java:211)
-E/GoogleApiManager( 6889): 	at android.os.Looper.loop(Looper.java:300)
-E/GoogleApiManager( 6889): 	at android.os.HandlerThread.run(HandlerThread.java:67)
-D/nativeloader( 6889): Load /data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk!/lib/arm64-v8a/libconscrypt_gmscore_jni.so using ns clns-8 from class loader (caller=/data/app/~~jpZfVZdWMnin-KGyaobcPg==/com.google.android.gms-zQMpQPent3j9yMNtg_4_-g==/base.apk): ok
-V/NativeCrypto( 6889): Registering com/google/android/gms/org/conscrypt/NativeCrypto's 315 native methods...
-W/FlagRegistrar( 6889): Failed to register com.google.android.gms.providerinstaller#com.example.clonubereat
-W/FlagRegistrar( 6889): fghm: 17: 17: API: Phenotype.API is not available on this device. Connection failed with: ConnectionResult{statusCode=DEVELOPER_ERROR, resolution=null, message=null}
-W/FlagRegistrar( 6889): 	at fgho.a(:com.google.android.gms@252234029@25.22.34 (190400-769260661):13)
-W/FlagRegistrar( 6889): 	at gbtj.d(:com.google.android.gms@252234029@25.22.34 (190400-769260661):3)
-W/FlagRegistrar( 6889): 	at gbtl.run(:com.google.android.gms@252234029@25.22.34 (190400-769260661):130)
-W/FlagRegistrar( 6889): 	at gbvs.execute(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-W/FlagRegistrar( 6889): 	at gbtt.f(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-W/FlagRegistrar( 6889): 	at gbtt.m(:com.google.android.gms@252234029@25.22.34 (190400-769260661):99)
-W/FlagRegistrar( 6889): 	at gbtt.r(:com.google.android.gms@252234029@25.22.34 (190400-769260661):17)
-W/FlagRegistrar( 6889): 	at eyqj.hX(:com.google.android.gms@252234029@25.22.34 (190400-769260661):35)
-W/FlagRegistrar( 6889): 	at emvm.run(:com.google.android.gms@252234029@25.22.34 (190400-769260661):12)
-W/FlagRegistrar( 6889): 	at gbvs.execute(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-W/FlagRegistrar( 6889): 	at emvn.b(:com.google.android.gms@252234029@25.22.34 (190400-769260661):18)
-W/FlagRegistrar( 6889): 	at emwc.b(:com.google.android.gms@252234029@25.22.34 (190400-769260661):36)
-W/FlagRegistrar( 6889): 	at emwe.d(:com.google.android.gms@252234029@25.22.34 (190400-769260661):25)
-W/FlagRegistrar( 6889): 	at awwd.c(:com.google.android.gms@252234029@25.22.34 (190400-769260661):9)
-W/FlagRegistrar( 6889): 	at awyt.q(:com.google.android.gms@252234029@25.22.34 (190400-769260661):48)
-W/FlagRegistrar( 6889): 	at awyt.d(:com.google.android.gms@252234029@25.22.34 (190400-769260661):10)
-W/FlagRegistrar( 6889): 	at awyt.g(:com.google.android.gms@252234029@25.22.34 (190400-769260661):185)
-W/FlagRegistrar( 6889): 	at awyt.onConnectionFailed(:com.google.android.gms@252234029@25.22.34 (190400-769260661):2)
-W/FlagRegistrar( 6889): 	at awyv.run(:com.google.android.gms@252234029@25.22.34 (190400-769260661):70)
-W/FlagRegistrar( 6889): 	at android.os.Handler.handleCallback(Handler.java:942)
-W/FlagRegistrar( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:99)
-W/FlagRegistrar( 6889): 	at chad.mH(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-W/FlagRegistrar( 6889): 	at chad.dispatchMessage(:com.google.android.gms@252234029@25.22.34 (190400-769260661):5)
-W/FlagRegistrar( 6889): 	at android.os.Looper.loopOnce(Looper.java:211)
-W/FlagRegistrar( 6889): 	at android.os.Looper.loop(Looper.java:300)
-W/FlagRegistrar( 6889): 	at android.os.HandlerThread.run(HandlerThread.java:67)
-W/FlagRegistrar( 6889): Caused by: awur: 17: API: Phenotype.API is not available on this device. Connection failed with: ConnectionResult{statusCode=DEVELOPER_ERROR, resolution=null, message=null}
-W/FlagRegistrar( 6889): 	at axre.a(:com.google.android.gms@252234029@25.22.34 (190400-769260661):15)
-W/FlagRegistrar( 6889): 	at awwg.a(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-W/FlagRegistrar( 6889): 	at awwd.c(:com.google.android.gms@252234029@25.22.34 (190400-769260661):5)
-W/FlagRegistrar( 6889): 	... 12 more
-W/ple.clonubereat( 6889): Accessing hidden method Ljava/security/spec/ECParameterSpec;->getCurveName()Ljava/lang/String; (unsupported, reflection, allowed)
-I/ProviderInstaller( 6889): Installed default security provider GmsCore_OpenSSL
-W/System  ( 6889): Ignoring header X-Firebase-Locale because its value was null.
-W/ple.clonubereat( 6889): Accessing hidden field Ljava/net/Socket;->impl:Ljava/net/SocketImpl; (unsupported, reflection, allowed)
-W/ple.clonubereat( 6889): Accessing hidden method Ljava/security/spec/ECParameterSpec;->setCurveName(Ljava/lang/String;)V (unsupported, reflection, allowed)
-D/FirebaseAuth( 6889): Notifying id token listeners about user ( 6l6rdYe1slUDMydzsWos1hENIAm2 ).
-I/flutter ( 6889): Login success: true
-D/ProfileInstaller( 6889): Installing profile for com.example.clonubereat
-I/flutter ( 6889): Estado de autenticación: AuthState(user: Instance of 'User', isLoading: false, isNewUser: false, isInitialized: true, errorMessage: null)
-W/Firestore( 6889): (25.1.3) [Firestore]: Listen for Query(target=Query(notifications where targetUserId==6l6rdYe1slUDMydzsWos1hENIAm2 order by -timestamp, -__name__);limitType=LIMIT_TO_FIRST) failed: Status{code=FAILED_PRECONDITION, description=The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/clon-ubereat/firestore/indexes?create_composite=ClJwcm9qZWN0cy9jbG9uLXViZXJlYXQvZGF0YWJhc2VzLyhkZWZhdWx0KS9jb2xsZWN0aW9uR3JvdXBzL25vdGlmaWNhdGlvbnMvaW5kZXhlcy9fEAEaEAoMdGFyZ2V0VXNlcklkEAEaDQoJdGltZXN0YW1wEAIaDAoIX19uYW1lX18QAg, cause=null}
-W/OnBackInvokedCallback( 6889): OnBackInvokedCallback is not enabled for the application.
-W/OnBackInvokedCallback( 6889): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
-E/GoogleApiManager( 6889): Failed to get service from broker. 
-E/GoogleApiManager( 6889): java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
-E/GoogleApiManager( 6889): 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3033)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.createException(Parcel.java:3017)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.readException(Parcel.java:3000)
-E/GoogleApiManager( 6889): 	at android.os.Parcel.readException(Parcel.java:2942)
-E/GoogleApiManager( 6889): 	at axtl.a(:com.google.android.gms@252234029@25.22.34 (190400-769260661):36)
-E/GoogleApiManager( 6889): 	at axrs.z(:com.google.android.gms@252234029@25.22.34 (190400-769260661):143)
-E/GoogleApiManager( 6889): 	at awyv.run(:com.google.android.gms@252234029@25.22.34 (190400-769260661):42)
-E/GoogleApiManager( 6889): 	at android.os.Handler.handleCallback(Handler.java:942)
-E/GoogleApiManager( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:99)
-E/GoogleApiManager( 6889): 	at chad.mH(:com.google.android.gms@252234029@25.22.34 (190400-769260661):1)
-E/GoogleApiManager( 6889): 	at chad.dispatchMessage(:com.google.android.gms@252234029@25.22.34 (190400-769260661):5)
-E/GoogleApiManager( 6889): 	at android.os.Looper.loopOnce(Looper.java:211)
-E/GoogleApiManager( 6889): 	at android.os.Looper.loop(Looper.java:300)
-E/GoogleApiManager( 6889): 	at android.os.HandlerThread.run(HandlerThread.java:67)
-W/MirrorManager( 6889): this model don't Support
+FAILURE: Build failed with an exception.
 
-══╡ EXCEPTION CAUGHT BY GESTURE ╞═══════════════════════════════════════════════════════════════════
-The following assertion was thrown while handling a gesture:
-Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-To use the Navigator API with named routes (pushNamed, pushReplacementNamed, or
-pushNamedAndRemoveUntil), the Navigator must be provided with an onGenerateRoute handler.
-The Navigator was:
-  NavigatorState#75bff(tickers: tracking 1 ticker)
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/home/mauchly/development/flutter/bin/flutter'' finished with non-zero exit value 1
 
-When the exception was thrown, this was the stack:
-#0      NavigatorState._routeNamed.<anonymous closure> (package:flutter/src/widgets/navigator.dart:4635:9)
-#1      NavigatorState._routeNamed (package:flutter/src/widgets/navigator.dart:4645:6)
-#2      NavigatorState.pushNamed (package:flutter/src/widgets/navigator.dart:4715:21)
-#3      Navigator.pushNamed (package:flutter/src/widgets/navigator.dart:1905:34)
-#4      _CustomerHomeScreenState._buildStoreCard.<anonymous closure> (package:clonubereat/screens/customer/customer_home_screen.dart:433:21)
-#5      _InkResponseState.handleTap (package:flutter/src/material/ink_well.dart:1203:21)
-#6      GestureRecognizer.invokeCallback (package:flutter/src/gestures/recognizer.dart:345:24)
-#7      TapGestureRecognizer.handleTapUp (package:flutter/src/gestures/tap.dart:737:11)
-#8      BaseTapGestureRecognizer._checkUp (package:flutter/src/gestures/tap.dart:362:5)
-#9      BaseTapGestureRecognizer.acceptGesture (package:flutter/src/gestures/tap.dart:332:7)
-#10     GestureArenaManager.sweep (package:flutter/src/gestures/arena.dart:173:27)
-#11     GestureBinding.handleEvent (package:flutter/src/gestures/binding.dart:534:20)
-#12     GestureBinding.dispatchEvent (package:flutter/src/gestures/binding.dart:499:22)
-#13     RendererBinding.dispatchEvent (package:flutter/src/rendering/binding.dart:473:11)
-#14     GestureBinding._handlePointerEventImmediately (package:flutter/src/gestures/binding.dart:437:7)
-#15     GestureBinding.handlePointerEvent (package:flutter/src/gestures/binding.dart:394:5)
-#16     GestureBinding._flushPointerEventQueue (package:flutter/src/gestures/binding.dart:341:7)
-#17     GestureBinding._handlePointerDataPacket (package:flutter/src/gestures/binding.dart:308:9)
-#18     _invoke1 (dart:ui/hooks.dart:347:13)
-#19     PlatformDispatcher._dispatchPointerDataPacket (dart:ui/platform_dispatcher.dart:467:7)
-#20     _dispatchPointerDataPacket (dart:ui/hooks.dart:282:31)
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
 
-Handler: "onTap"
-Recognizer:
-  TapGestureRecognizer#b24a6
-════════════════════════════════════════════════════════════════════════════════════════════════════
-
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-store-detail" was referenced.
-W/OnBackInvokedCallback( 6889): OnBackInvokedCallback is not enabled for the application.
-W/OnBackInvokedCallback( 6889): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
-Another exception was thrown: Navigator.onGenerateRoute was null, but the route named "/customer-home" was referenced.
-W/OnBackInvokedCallback( 6889): OnBackInvokedCallback is not enabled for the application.
-W/OnBackInvokedCallback( 6889): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
-W/OnBackInvokedCallback( 6889): OnBackInvokedCallback is not enabled for the application.
-W/OnBackInvokedCallback( 6889): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
-W/OnBackInvokedCallback( 6889): OnBackInvokedCallback is not enabled for the application.
-W/OnBackInvokedCallback( 6889): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
-Lost connection to device.
-the Dart compiler exited unexpectedly.
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                           2,423ms
+Error: Gradle task assembleDebug failed with exit code 1
