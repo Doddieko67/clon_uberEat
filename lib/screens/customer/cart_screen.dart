@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../models/cart_item_model.dart';
@@ -248,11 +249,7 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
 
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/customer-home',
-                (route) => false,
-              );
+              context.go('/customer');
             },
             icon: Icon(Icons.store, color: AppColors.textOnPrimary),
             label: Text(
@@ -844,7 +841,7 @@ class _CartScreenState extends ConsumerState<CartScreen> with TickerProviderStat
             height: 56,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/customer-checkout');
+                context.go('/customer/checkout');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,

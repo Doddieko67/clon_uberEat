@@ -489,7 +489,7 @@ class _StoreDashboardScreenState extends ConsumerState<StoreDashboardScreen>
                 'Gestionar Menú',
                 Icons.restaurant_menu,
                 AppColors.secondary,
-                () => Navigator.pushNamed(context, '/store-menu-management'),
+                () => context.go('/store/menu'),
               ),
             ),
             SizedBox(width: 12),
@@ -498,7 +498,7 @@ class _StoreDashboardScreenState extends ConsumerState<StoreDashboardScreen>
                 'Ver Pedidos',
                 Icons.list_alt,
                 AppColors.primary,
-                () => Navigator.pushNamed(context, '/store-order-management'),
+                () => context.go('/store/orders'),
               ),
             ),
           ],
@@ -511,12 +511,7 @@ class _StoreDashboardScreenState extends ConsumerState<StoreDashboardScreen>
                 'Analytics',
                 Icons.analytics,
                 AppColors.success,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StoreAnalyticsScreen(storeId: 'store_001'),
-                  ),
-                ),
+                () => context.go('/store/analytics'),
               ),
             ),
             SizedBox(width: 12),
@@ -579,7 +574,7 @@ Expanded(child: SizedBox()), // Espacio vacío
             ),
             TextButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/store-order-management');
+                context.go('/store/orders');
               },
               child: Text(
                 'Ver todos',

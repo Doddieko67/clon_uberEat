@@ -4,6 +4,8 @@ import 'package:clonubereat/models/operating_hours.dart';
 class Store extends User {
   final String storeName;
   final String address;
+  final double? latitude;
+  final double? longitude;
   final String category;
   final double rating;
   final int reviewCount;
@@ -26,6 +28,8 @@ class Store extends User {
     String? notes,
     required this.storeName,
     required this.address,
+    this.latitude,
+    this.longitude,
     required this.category,
     required this.rating,
     required this.reviewCount,
@@ -55,6 +59,8 @@ class Store extends User {
       ...super.toMap(),
       'storeName': storeName,
       'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
       'category': category,
       'rating': rating,
       'reviewCount': reviewCount,
@@ -81,6 +87,8 @@ class Store extends User {
       notes: userMap.notes,
       storeName: map['storeName'] as String,
       address: map['address'] as String,
+      latitude: map['latitude'] as double?,
+      longitude: map['longitude'] as double?,
       category: map['category'] as String,
       rating: (map['rating'] as num).toDouble(),
       reviewCount: map['reviewCount'] as int,
@@ -107,6 +115,8 @@ class Store extends User {
     String? notes,
     String? storeName,
     String? address,
+    double? latitude,
+    double? longitude,
     String? category,
     double? rating,
     int? reviewCount,
@@ -140,6 +150,8 @@ class Store extends User {
       notes: userCopy.notes,
       storeName: storeName ?? this.storeName,
       address: address ?? this.address,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       category: category ?? this.category,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,

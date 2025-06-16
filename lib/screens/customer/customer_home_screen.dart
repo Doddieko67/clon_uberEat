@@ -179,7 +179,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                       ),
                       IconButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/profile');
+                          context.go('/customer/profile');
                         },
                         icon: CircleAvatar(
                           radius: 16,
@@ -430,11 +430,7 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
       ),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/customer-store-detail',
-            arguments: store,
-          );
+          context.go('/customer/store/${store.id}');
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

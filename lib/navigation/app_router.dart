@@ -134,7 +134,7 @@ final GoRouter appRouter = GoRouter(
       path: '/customer/store/:storeId',
       builder: (context, state) {
         final storeId = state.pathParameters['storeId']!;
-        return StoreDetailScreen();
+        return StoreDetailScreen(storeId: storeId);
       },
     ),
     GoRoute(

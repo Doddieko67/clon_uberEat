@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:restart_app/restart_app.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../models/store_model.dart';
 import '../../models/user_model.dart';
 import '../../models/operating_hours.dart';
+import '../../widgets/common/location_picker_widget.dart';
 
 class StoreOnboardingScreen extends ConsumerStatefulWidget {
   const StoreOnboardingScreen({super.key});
@@ -56,6 +58,299 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'switch_role':
+        _showRoleSwitchDialog();
+        break;
+      case 'profile':
+        context.go('/profile');
+        break;
+      case 'logout':
+        _showLogoutDialog();
+        break;
+    }
+  }
+
+  void _showRoleSwitchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.swap_horiz, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Text(
+              'Cambiar Rol',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '¿A qué rol te gustaría cambiar?',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildRoleOption(
+              icon: Icons.shopping_cart,
+              title: 'Cliente',
+              subtitle: 'Pedir comida y realizar compras',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.pop(context);
+                _switchToRole(UserRole.customer);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildRoleOption(
+              icon: Icons.delivery_dining,
+              title: 'Repartidor',
+              subtitle: 'Entregar pedidos y ganar dinero',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.pop(context);
+                _switchToRole(UserRole.deliverer);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildRoleOption(
+              icon: Icons.admin_panel_settings,
+              title: 'Administrador',
+              subtitle: 'Gestionar la plataforma',
+              color: AppColors.warning,
+              onTap: () {
+                Navigator.pop(context);
+                _switchToRole(UserRole.admin);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _switchToRole(UserRole newRole) async {
+    try {
+      await ref.read(authNotifierProvider.notifier).updateUserRole(newRole);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Cambiando a ${_getRoleName(newRole)}...',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+
+        // Wait a moment then restart the app
+        await Future.delayed(const Duration(milliseconds: 500));
+        Restart.restartApp();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al cambiar rol: $e',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  String _getRoleName(UserRole role) {
+    switch (role) {
+      case UserRole.customer:
+        return 'Cliente';
+      case UserRole.store:
+        return 'Tienda';
+      case UserRole.deliverer:
+        return 'Repartidor';
+      case UserRole.admin:
+        return 'Administrador';
+    }
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.logout, color: AppColors.error),
+            const SizedBox(width: 12),
+            Text(
+              'Cerrar Sesión',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          '¿Estás seguro de que quieres cerrar sesión?',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: AppColors.textOnPrimary,
+            ),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    try {
+      await ref.read(authNotifierProvider.notifier).logout();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sesión cerrada exitosamente',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+
+        // Navigate to auth screen
+        context.go('/auth');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error al cerrar sesión: $e',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -123,6 +418,59 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
+        ),
+        const Spacer(),
+        PopupMenuButton<String>(
+          icon: Icon(
+            Icons.more_vert,
+            color: AppColors.textSecondary,
+          ),
+          color: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          onSelected: (value) => _handleMenuAction(value),
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'switch_role',
+              child: Row(
+                children: [
+                  Icon(Icons.swap_horiz, color: AppColors.primary, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cambiar Rol',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'profile',
+              child: Row(
+                children: [
+                  Icon(Icons.person, color: AppColors.secondary, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Mi Perfil',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'logout',
+              child: Row(
+                children: [
+                  Icon(Icons.logout, color: AppColors.error, size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Cerrar Sesión',
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -193,7 +541,100 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
           color: AppColors.secondary,
           onTap: () => _showJoinStoreDialog(),
         ),
+        const SizedBox(height: 24),
+        TextButton.icon(
+          onPressed: () => _showSkipDialog(),
+          icon: Icon(
+            Icons.skip_next,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+          label: Text(
+            'Saltar por ahora',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  void _showSkipDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.skip_next, color: AppColors.warning),
+            const SizedBox(width: 12),
+            Text(
+              'Saltar Configuración',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Puedes configurar tu tienda más tarde desde tu perfil.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¿Te gustaría cambiar a otro rol por ahora?',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showRoleSwitchDialog();
+            },
+            child: Text(
+              'Cambiar Rol',
+              style: TextStyle(color: AppColors.primary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/customer'); // Go to customer by default
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+              foregroundColor: AppColors.textOnPrimary,
+            ),
+            child: const Text('Ir a Cliente'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -267,10 +708,10 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
 
   void _showCreateStoreDialog() {
     final _storeNameController = TextEditingController();
-    final _addressController = TextEditingController();
     final _categoryController = TextEditingController();
     final _descriptionController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    LocationData? _selectedLocation;
 
     showDialog(
       context: context,
@@ -323,13 +764,16 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
                   },
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _addressController,
-                  label: 'Dirección',
-                  icon: Icons.location_on,
+                LocationPickerWidget(
+                  labelText: 'Ubicación de la tienda',
+                  hintText: 'Buscar dirección en Google Maps...',
+                  prefixIcon: Icons.location_on,
+                  onLocationSelected: (location) {
+                    _selectedLocation = location;
+                  },
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'La dirección es requerida';
+                    if (_selectedLocation == null) {
+                      return 'Debes seleccionar una ubicación';
                     }
                     return null;
                   },
@@ -355,12 +799,12 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
           ),
           ElevatedButton(
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
+              if (formKey.currentState!.validate() && _selectedLocation != null) {
                 Navigator.pop(context);
                 await _createStore(
                   storeName: _storeNameController.text,
                   category: _categoryController.text,
-                  address: _addressController.text,
+                  locationData: _selectedLocation!,
                   description: _descriptionController.text.isEmpty 
                       ? null 
                       : _descriptionController.text,
@@ -484,7 +928,7 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
   Future<void> _createStore({
     required String storeName,
     required String category,
-    required String address,
+    required LocationData locationData,
     String? description,
   }) async {
     try {
@@ -519,7 +963,9 @@ class _StoreOnboardingScreenState extends ConsumerState<StoreOnboardingScreen>
         lastActive: DateTime.now(),
         photoUrl: user.photoUrl,
         storeName: storeName,
-        address: address,
+        address: locationData.address,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
         category: category,
         rating: 0.0,
         reviewCount: 0,

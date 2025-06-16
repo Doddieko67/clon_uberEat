@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
 import '../../providers/order_provider.dart';
@@ -408,11 +409,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/customer-home',
-                        (route) => false,
-                      );
+                      context.go('/customer');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -554,11 +551,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       backgroundColor: AppColors.surface,
       elevation: 0,
       leading: IconButton(
-        onPressed: () => Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/customer-home',
-          (route) => false,
-        ),
+        onPressed: () => context.go('/customer'),
         icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
       ),
       title: Text(

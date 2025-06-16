@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
@@ -279,12 +280,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/customer-order-tracking',
-                        (route) => false,
-                        arguments: orderId,
-                      );
+                      context.go('/customer/tracking/$orderId');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -307,11 +303,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/customer-home',
-                      (route) => false,
-                    );
+                    context.go('/customer');
                   },
                   child: Text(
                     'Volver al inicio',

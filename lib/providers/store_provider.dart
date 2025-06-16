@@ -215,6 +215,8 @@ class StoreNotifier extends StateNotifier<List<Store>> {
         'notes': store.notes,
         'storeName': store.storeName,
         'address': store.address,
+        'latitude': store.latitude,
+        'longitude': store.longitude,
         'category': store.category,
         'rating': store.rating,
         'reviewCount': store.reviewCount,

@@ -137,11 +137,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
       );
 
       // Navegar a detalles del pedido
-      Navigator.pushNamed(
-        context,
-        '/deliverer-delivery-details',
-        arguments: order,
-      );
+      context.go('/deliverer/active');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -655,11 +651,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/deliverer-delivery-details',
-                      arguments: order,
-                    );
+                    context.go('/deliverer/active');
                   },
                   icon: Icon(Icons.navigation, size: 16),
                   label: Text('Ver Detalles'),

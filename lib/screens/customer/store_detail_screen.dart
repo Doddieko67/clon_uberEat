@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../models/store_model.dart';
 import '../../models/menu_item_model.dart';
@@ -7,6 +8,10 @@ import '../../providers/store_provider.dart';
 import '../../providers/cart_provider.dart';
 
 class StoreDetailScreen extends ConsumerStatefulWidget {
+  final String? storeId;
+  
+  const StoreDetailScreen({super.key, this.storeId});
+  
   @override
   _StoreDetailScreenState createState() => _StoreDetailScreenState();
 }
@@ -22,18 +27,23 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
   void initState() {
     super.initState();
     
-    // Obtener store de los argumentos
+    // Obtener store ID del router o usar el parámetro pasado
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is Store) {
-        setState(() {
-          _store = args;
-          _categories = ref.read(categoriesForStoreProvider(args.id));
-          // Solo crear TabController si hay categorías
-          if (_categories.isNotEmpty) {
-            _tabController = TabController(length: _categories.length, vsync: this);
-          }
-        });
+      final storeId = widget.storeId ?? GoRouterState.of(context).pathParameters['storeId'];
+      
+      if (storeId != null) {
+        // Obtener la tienda desde el provider usando el ID
+        final store = ref.read(storeByIdProvider(storeId));
+        if (store != null) {
+          setState(() {
+            _store = store;
+            _categories = ref.read(categoriesForStoreProvider(storeId));
+            // Solo crear TabController si hay categorías
+            if (_categories.isNotEmpty) {
+              _tabController = TabController(length: _categories.length, vsync: this);
+            }
+          });
+        }
       }
     });
   }
@@ -191,7 +201,7 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
       pinned: true,
       backgroundColor: AppColors.surface,
       leading: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.go('/customer'),
         icon: Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -768,7 +778,7 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/customer-cart');
+              context.go('/customer/cart');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,

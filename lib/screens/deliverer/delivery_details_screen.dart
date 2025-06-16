@@ -1,9 +1,11 @@
 // screens/deliverer/delivery_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/order_model.dart';
 import '../../services/location_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -68,17 +70,34 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
     
     // Obtener el pedido desde los argumentos de navegación
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is Map<String, dynamic> && args['id'] != null) {
+      // Get order from GoRouter state - for now using first available active order
+      final ordersAsyncValue = ref.read(ordersProvider);
+      ordersAsyncValue.whenData((orders) {
+        final authState = ref.read(authNotifierProvider);
+        final currentUserId = authState.user?.id;
+        
+        // Find first active delivery for this deliverer
+        final activeOrder = orders.firstWhere(
+          (order) => order.delivererId == currentUserId && 
+                     (order.status == OrderStatus.preparing || 
+                      order.status == OrderStatus.outForDelivery),
+          orElse: () => orders.isNotEmpty ? orders.first : Order(
+            id: 'demo-order',
+            customerId: '',
+            storeId: '',
+            items: [],
+            totalAmount: 0,
+            status: OrderStatus.preparing,
+            deliveryAddress: '',
+            orderTime: DateTime.now(),
+          ),
+        );
+        
         setState(() {
-          _orderId = args['id'];
+          _order = activeOrder;
+          _orderId = activeOrder.id;
         });
-      } else if (args is Order) {
-        setState(() {
-          _order = args;
-          _orderId = args.id;
-        });
-      }
+      });
     });
   }
 
@@ -262,7 +281,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context); // Cerrar dialog
-                      Navigator.pop(context); // Volver al dashboard
+                      context.go('/deliverer'); // Volver al dashboard
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
@@ -565,7 +584,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
       backgroundColor: AppColors.surface,
       elevation: 0,
       leading: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.go('/deliverer'),
         icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
       ),
       title: Text(
@@ -579,7 +598,10 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
         IconButton(
           onPressed: () {
             // Mostrar mapa en pantalla completa
-            Navigator.pushNamed(context, '/deliverer-customer-location');
+            // TODO: Implementar ruta para ver ubicación de cliente
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Función de mapa en desarrollo')),
+            );
           },
           icon: Icon(Icons.map, color: AppColors.textSecondary),
           tooltip: 'Ver en mapa',
@@ -1015,13 +1037,9 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
                   ),
                   IconButton(
                     onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/deliverer-customer-location',
-                        arguments: {
-                          'currentLocation': _currentLocation,
-                          'order': _order,
-                        },
+                      // TODO: Implementar navegación a mapa de ubicación
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Función de mapa en desarrollo')),
                       );
                     },
                     icon: Icon(Icons.map, color: AppColors.primary),

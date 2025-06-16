@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
@@ -219,7 +220,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
       }
     }
     
-    Navigator.pushNamed(context, '/customer-cart');
+    context.go('/customer/cart');
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -642,7 +643,7 @@ class _OrderHistoryScreenState extends ConsumerState<OrderHistoryScreen>
             SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/customer-home');
+                context.go('/customer');
               },
               child: Text(
                 'Explorar tiendas',
