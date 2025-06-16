@@ -1,9 +1,11 @@
 // screens/deliverer/deliverer_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../providers/auth_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/order_model.dart';
 
@@ -22,7 +24,6 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
 
   Timer? _refreshTimer;
   bool _isAvailable = true;
-  int _currentBottomIndex = 0;
 
   // Datos simulados del repartidor
   final Map<String, dynamic> _delivererStats = {
@@ -228,7 +229,6 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(allOrders),
     );
   }
 
@@ -299,6 +299,50 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                       ],
                     ),
                   ),
+
+                  // Botón de notificaciones
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                      return IconButton(
+                        onPressed: () => context.go('/deliverer/notifications'),
+                        icon: Stack(
+                          children: [
+                            Icon(
+                              Icons.notifications_outlined,
+                              color: AppColors.textSecondary,
+                              size: 24,
+                            ),
+                            if (unreadCount > 0)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: AppColors.surface, width: 1),
+                                  ),
+                                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                  child: Text(
+                                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(width: 8),
 
                   // Toggle de disponibilidad
                   AnimatedBuilder(
@@ -1026,7 +1070,7 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
                 'Mi Historial',
                 Icons.history,
                 AppColors.secondary,
-                () => Navigator.pushNamed(context, '/deliverer-history'),
+                () => context.go('/deliverer/history'),
               ),
             ),
             SizedBox(width: 12),
@@ -1082,81 +1126,4 @@ class _DelivererDashboardScreenState extends ConsumerState<DelivererDashboardScr
     );
   }
 
-  Widget _buildBottomNavigation(List<Order> allOrders) {
-    final availableOrders = allOrders.where((order) => 
-      order.delivererId == null &&
-      order.status == OrderStatus.pending
-    ).toList();
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.darkWithOpacity(0.2),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        currentIndex: _currentBottomIndex,
-        onTap: (index) {
-          setState(() {
-            _currentBottomIndex = index;
-          });
-
-          switch (index) {
-            case 0:
-              // Ya estamos en Dashboard
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/deliverer-history');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/profile');
-              break;
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textTertiary,
-        items: [
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                Icon(Icons.dashboard_outlined),
-                if (availableOrders.isNotEmpty && _isAvailable)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.warning,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Perfil',
-          ),
-        ],
-      ),
-    );
-  }
 }

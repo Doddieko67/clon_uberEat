@@ -144,21 +144,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.surface,
-              AppColors.primary,
-              AppColors.primaryDark,
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
+        decoration: BoxDecoration(gradient: AppGradients.splash),
         child: Center(
           child: AnimatedBuilder(
             animation: Listenable.merge([
@@ -168,32 +154,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             builder: (context, child) {
               return FadeTransition(
                 opacity: _fadeAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo real con animación suave
-                    _buildAnimatedLogo(),
-                    
-                    SizedBox(height: 40),
-                    
-                    // App title
-                    _buildAnimatedTitle(),
-                    
-                    SizedBox(height: 16),
-                    
-                    // Subtitle
-                    _buildAnimatedSubtitle(),
-                    
-                    SizedBox(height: 60),
-                    
-                    // Loading simple
-                    _buildSimpleLoadingIndicator(),
-                    
-                    SizedBox(height: 20),
-                    
-                    // Loading text
-                    _buildLoadingText(),
-                  ],
+                child: ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo original con imagen
+                      _buildOriginalLogo(),
+                      
+                      SizedBox(height: 32),
+                      
+                      // Título con tema original
+                      _buildThemeTitle(),
+                      
+                      SizedBox(height: 8),
+                      
+                      // Subtitle con colores del tema
+                      _buildThemeSubtitle(),
+                      
+                      SizedBox(height: 60),
+                      
+                      // Loading con colores del tema
+                      _buildThemeLoading(),
+                      
+                      SizedBox(height: 16),
+                      
+                      // Loading text
+                      _buildThemeLoadingText(),
+                    ],
+                  ),
                 ),
               );
             },
@@ -203,71 +192,53 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
   
+  Widget _buildOriginalLogo() {
+    return Image.asset(
+      'assets/images/logo.png',
+      width: 250,
+      height: 250,
+    );
+  }
   
-  Widget _buildAnimatedLogo() {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: Container(
-        width: 160,
-        height: 160,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
+  Widget _buildThemeTitle() {
+    return Transform.translate(
+      offset: Offset(0, _slideAnimation.value),
+      child: Text(
+        'UBERecus Eat',
+        style: TextStyle(
+          fontSize: 36,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
+          letterSpacing: 1.2,
+          shadows: [
+            Shadow(
+              blurRadius: 15.0,
               color: AppColors.primary.withOpacity(0.3),
-              blurRadius: 20,
-              spreadRadius: 5,
+              offset: Offset(0, 4),
+            ),
+            Shadow(
+              blurRadius: 5.0,
+              color: AppColors.darkWithOpacity(0.5),
+              offset: Offset(0, 2),
             ),
           ],
         ),
-        child: ClipOval(
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Image.asset(
-              'assets/images/logo.png',
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
       ),
     );
   }
   
-  Widget _buildAnimatedTitle() {
-    return Text(
-      'UBERecus Eat',
-      style: TextStyle(
-        fontSize: 36,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-        letterSpacing: 1.5,
-        shadows: [
-          Shadow(
-            blurRadius: 10.0,
-            color: AppColors.primary.withOpacity(0.5),
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildAnimatedSubtitle() {
+  Widget _buildThemeSubtitle() {
     return Transform.translate(
       offset: Offset(0, _slideAnimation.value),
       child: Opacity(
-        opacity: _fadeAnimation.value,
+        opacity: _fadeAnimation.value * 0.9,
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
           decoration: BoxDecoration(
-            color: AppColors.textPrimary.withOpacity(0.1),
+            color: AppColors.secondary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.textPrimary.withOpacity(0.3),
+              color: AppColors.secondary.withOpacity(0.3),
               width: 1,
             ),
           ),
@@ -275,8 +246,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             'Comida escolar a tu alcance',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w300,
               letterSpacing: 0.5,
             ),
           ),
@@ -285,27 +256,35 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
   
-  Widget _buildSimpleLoadingIndicator() {
+  Widget _buildThemeLoading() {
     return SizedBox(
-      width: 50,
-      height: 50,
+      width: 40,
+      height: 40,
       child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
+        backgroundColor: AppColors.textPrimary.withOpacity(0.2),
         strokeWidth: 3,
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
       ),
     );
   }
   
-  
-  Widget _buildLoadingText() {
-    return Text(
-      'Preparando tu experiencia...',
-      style: TextStyle(
-        fontSize: 14,
-        color: AppColors.textSecondary,
-        fontWeight: FontWeight.w300,
-        letterSpacing: 0.5,
-      ),
+  Widget _buildThemeLoadingText() {
+    return AnimatedBuilder(
+      animation: _loadingAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.6 + (0.4 * _loadingAnimation.value),
+          child: Text(
+            'Preparando tu experiencia...',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w300,
+              letterSpacing: 0.5,
+            ),
+          ),
+        );
+      },
     );
   }
   

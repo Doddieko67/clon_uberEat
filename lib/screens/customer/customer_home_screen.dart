@@ -1,9 +1,11 @@
 import 'package:clonubereat/providers/auth_provider.dart';
 import 'package:clonubereat/providers/store_provider.dart';
 import 'package:clonubereat/providers/cart_provider.dart';
+import 'package:clonubereat/providers/notification_provider.dart';
 import 'package:clonubereat/models/store_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -133,31 +135,47 @@ class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Notificaciones
-                        },
-                        icon: Stack(
-                          children: [
-                            Icon(
-                              Icons.notifications_outlined,
-                              color: AppColors.textSecondary,
-                              size: 24,
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                          return IconButton(
+                            onPressed: () {
+                              context.go('/customer/notifications');
+                            },
+                            icon: Stack(
+                              children: [
+                                Icon(
+                                  Icons.notifications_outlined,
+                                  color: AppColors.textSecondary,
+                                  size: 24,
                                 ),
-                              ),
+                                if (unreadCount > 0)
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: AppColors.surface, width: 1),
+                                      ),
+                                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                      child: Text(
+                                        unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                       IconButton(
                         onPressed: () {

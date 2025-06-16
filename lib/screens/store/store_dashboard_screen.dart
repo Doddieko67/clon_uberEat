@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import '../../theme/app_theme.dart';
+import '../../providers/notification_provider.dart';
 import 'store_analytics_screen.dart';
 
-class StoreDashboardScreen extends StatefulWidget {
+class StoreDashboardScreen extends ConsumerStatefulWidget {
   @override
   _StoreDashboardScreenState createState() => _StoreDashboardScreenState();
 }
 
-class _StoreDashboardScreenState extends State<StoreDashboardScreen>
+class _StoreDashboardScreenState extends ConsumerState<StoreDashboardScreen>
     with TickerProviderStateMixin {
   late AnimationController _notificationController;
   late Animation<double> _pulseAnimation;
@@ -289,52 +292,57 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen>
               Row(
                 children: [
                   // Notificaciones con animación
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/store-order-management');
-                    },
-                    icon: AnimatedBuilder(
-                      animation: _pulseAnimation,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: _todayStats['nuevos']! > 0
-                              ? _pulseAnimation.value
-                              : 1.0,
-                          child: Stack(
-                            children: [
-                              Icon(
-                                Icons.notifications_outlined,
-                                color: AppColors.textSecondary,
-                                size: 24,
-                              ),
-                              if (_todayStats['nuevos']! > 0)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 16,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.error,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        '${_todayStats['nuevos']}',
-                                        style: TextStyle(
-                                          color: AppColors.textOnPrimary,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final unreadCount = ref.watch(unreadNotificationsCountProvider);
+                      return IconButton(
+                        onPressed: () {
+                          context.go('/store/notifications');
+                        },
+                        icon: AnimatedBuilder(
+                          animation: _pulseAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: unreadCount > 0
+                                  ? _pulseAnimation.value
+                                  : 1.0,
+                              child: Stack(
+                                children: [
+                                  Icon(
+                                    Icons.notifications_outlined,
+                                    color: AppColors.textSecondary,
+                                    size: 24,
+                                  ),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.error,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: AppColors.surface, width: 1),
+                                        ),
+                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                        child: Text(
+                                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
 
                   // Toggle estado de tienda

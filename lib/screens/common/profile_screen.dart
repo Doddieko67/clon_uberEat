@@ -6,7 +6,7 @@ import 'package:clonubereat/providers/auth_provider.dart';
 import 'package:clonubereat/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:restart_app/restart_app.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   @override
@@ -395,84 +395,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     Navigator.pop(context);
 
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        content: Row(
-          children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(width: 16),
-            Text(
-              'Cambiando rol...',
-              style: TextStyle(color: AppColors.textPrimary),
-            ),
-          ],
-        ),
-      ),
-    );
-
     try {
-      // Update user role
+      // Update role
       await ref.read(authNotifierProvider.notifier).updateUserRole(newRole);
       
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-      
-      // Navigate to appropriate screen based on role
+      // Show success message with animation and then restart automatically
       if (mounted) {
-        String route;
-        switch (newRole) {
-          case UserRole.customer:
-            route = '/customer';
-            break;
-          case UserRole.store:
-            route = '/store';
-            break;
-          case UserRole.deliverer:
-            route = '/deliverer';
-            break;
-          case UserRole.admin:
-            route = '/admin-dashboard';
-            break;
-        }
-        
-        context.go(route);
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
+        // Show loading dialog with better styling
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
               children: [
-                Icon(Icons.check_circle, color: AppColors.textOnPrimary),
-                SizedBox(width: 8),
-                Text('Rol cambiado exitosamente'),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: AppColors.success,
+                    strokeWidth: 3,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text(
+                  'Cambiando Rol...',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'El rol se está actualizando.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'La aplicación se reiniciará automáticamente.',
+                  style: TextStyle(
+                    color: AppColors.textTertiary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
+
+        // Wait a bit for user feedback and smooth transition
+        await Future.delayed(Duration(milliseconds: 1500));
+        
+        // Restart the app automatically using restart_app package
+        try {
+          await Restart.restartApp();
+        } catch (e) {
+          // Fallback: close dialog and show message if restart fails
+          if (mounted) {
+            Navigator.of(context).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Rol cambiado. Por favor, reinicia la aplicación manualmente.',
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+                backgroundColor: AppColors.success,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-      
-      // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error, color: AppColors.textOnPrimary),
-                SizedBox(width: 8),
-                Text('Error al cambiar rol: ${e.toString()}'),
-              ],
-            ),
+            content: Text('Error al cambiar rol'),
             backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
           ),
         );
       }

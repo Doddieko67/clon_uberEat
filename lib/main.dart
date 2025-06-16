@@ -7,7 +7,14 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(ProviderScope(child: CampusEatsApp()));
+  
+  final container = ProviderContainer();
+  setRouterContainer(container);
+  
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: CampusEatsApp(),
+  ));
 }
 
 class CampusEatsApp extends StatelessWidget {

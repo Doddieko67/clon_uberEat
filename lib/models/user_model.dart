@@ -68,7 +68,7 @@ class User {
     return User(
       id: map['id'] as String,
       name: map['name'] as String,
-      phone: map['phone'] as String,
+      phone: map['phone'] as String?,
       boletaNumber: map['boletaNumber'] as String,
       role: UserRole.values.firstWhere(
           (e) => e.toString().split('.').last == map['role'] as String),

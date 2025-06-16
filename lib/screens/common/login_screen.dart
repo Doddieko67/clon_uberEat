@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/user_model.dart';
 import '../../theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {  // CAMBIO
@@ -46,10 +48,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final authState = ref.read(authNotifierProvider);
         
         if (authState.isNewUser) {
-          Navigator.pushReplacementNamed(context, '/register');
+          context.pushReplacement('/register');
         } else {
           final role = authState.user!.role;
-          _redirectBasedOnRole(role.name);
+          _redirectBasedOnRole(role);
         }
       } else if (mounted) {
         // CAMBIO: usar ref.read para obtener error
@@ -78,26 +80,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _redirectBasedOnRole(String role) {
+  void _redirectBasedOnRole(UserRole role) {
     String route;
     switch (role) {
-      case 'customer':
-        route = '/customer-home';
+      case UserRole.customer:
+        route = '/customer';
         break;
-      case 'store':
-        route = '/store-dashboard';
+      case UserRole.store:
+        route = '/store';
         break;
-      case 'deliverer':
-        route = '/deliverer-dashboard';
+      case UserRole.deliverer:
+        route = '/deliverer';
         break;
-      case 'admin':
+      case UserRole.admin:
         route = '/admin-dashboard';
         break;
       default:
-        route = '/customer-home';
+        route = '/customer';
     }
 
-    Navigator.pushReplacementNamed(context, route);
+    context.pushReplacement(route);
   }
 
   @override

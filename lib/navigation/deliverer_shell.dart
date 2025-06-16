@@ -66,8 +66,8 @@ class DelivererBottomNavBar extends ConsumerWidget {
               label: 'Historial',
             ),
             BottomNavigationBarItem(
-              icon: _buildIcon(Icons.location_on_outlined, Icons.location_on, location == '/deliverer/location'),
-              label: 'Ubicación',
+              icon: _buildIcon(Icons.person_outline, Icons.person, location == '/deliverer/profile'),
+              label: 'Perfil',
             ),
           ],
         ),
@@ -93,7 +93,7 @@ class DelivererBottomNavBar extends ConsumerWidget {
         return 1;
       case '/deliverer/history':
         return 2;
-      case '/deliverer/location':
+      case '/deliverer/profile':
         return 3;
       default:
         return 0;
@@ -112,7 +112,7 @@ class DelivererBottomNavBar extends ConsumerWidget {
         context.go('/deliverer/history');
         break;
       case 3:
-        context.go('/deliverer/location');
+        context.go('/deliverer/profile');
         break;
     }
   }
