@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/app_theme.dart';
 import '../../models/location_model.dart';
 import '../common/location_picker_widget.dart';
+import '../../screens/common/map_location_picker_screen.dart';
+import '../../providers/customer_location_provider.dart';
 
 class AddressSelectorWidget extends ConsumerStatefulWidget {
   final LocationData? selectedLocation;
@@ -24,30 +26,16 @@ class AddressSelectorWidget extends ConsumerStatefulWidget {
 }
 
 class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
-  // Direcciones guardadas (simuladas - en una app real vendrían de Firestore)
-  List<LocationData> _savedAddresses = [
-    LocationData(
-      address: 'Dormitorio Estudiantil, Edificio A, Cuarto 205',
-      latitude: 25.6866,
-      longitude: -100.3161,
-      formattedAddress: 'Edificio A, Cuarto 205, Ciudad Universitaria',
-      placeId: 'ChIJkbeSa_BrQIYRFf4EG79BhOA',
-    ),
-    LocationData(
-      address: 'Biblioteca Central, Planta Baja',
-      latitude: 25.6856,
-      longitude: -100.3151,
-      formattedAddress: 'Biblioteca Central, Planta Baja, Ciudad Universitaria',
-      placeId: 'ChIJkbeSa_BrQIYRFf4EG79BhOB',
-    ),
-    LocationData(
-      address: 'Oficina - Coordinación, Edificio Administrativo',
-      latitude: 25.6876,
-      longitude: -100.3171,
-      formattedAddress: 'Edificio Administrativo, Piso 3, Oficina 301',
-      placeId: 'ChIJkbeSa_BrQIYRFf4EG79BhOC',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    // Set initial selected location if provided
+    if (widget.selectedLocation != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(customerLocationProvider.notifier).setSelectedLocation(widget.selectedLocation!);
+      });
+    }
+  }
 
   void _showAddressSelectionModal() {
     showModalBottomSheet(
@@ -110,19 +98,62 @@ class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
                     SizedBox(height: 24),
                     
                     // Direcciones guardadas
-                    if (_savedAddresses.isNotEmpty) ...[
-                      Text(
-                        'Direcciones guardadas',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      ..._savedAddresses.map((address) => 
-                        _buildSavedAddressCard(address)),
-                    ],
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final locationState = ref.watch(customerLocationProvider);
+                        final savedAddresses = locationState.savedLocations;
+                        
+                        if (savedAddresses.isEmpty) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.location_off,
+                                    size: 48,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No tienes ubicaciones guardadas',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Usa el mapa para marcar tus puntos favoritos',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textTertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Direcciones guardadas',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            ...savedAddresses.map((address) => 
+                              _buildSavedAddressCard(address)),
+                          ],
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -134,61 +165,136 @@ class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
   }
 
   Widget _buildSearchNewAddressCard() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-      ),
-      child: InkWell(
-        onTap: () => _showLocationPicker(),
-        borderRadius: BorderRadius.circular(16),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.search,
-                color: AppColors.textOnPrimary,
-                size: 20,
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Buscar nueva dirección',
+    return Column(
+      children: [
+        // Map picker option
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+          ),
+          child: InkWell(
+            onTap: () => _showMapPicker(),
+            borderRadius: BorderRadius.circular(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.map,
+                    color: AppColors.textOnPrimary,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Seleccionar en el mapa',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Marca el punto exacto de entrega en el campus',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'RECOMENDADO',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textOnPrimary,
                     ),
                   ),
-                  Text(
-                    'Usa Google Maps para encontrar tu ubicación',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: AppColors.primary,
-              size: 16,
-            ),
-          ],
+          ),
         ),
-      ),
+        
+        SizedBox(height: 12),
+        
+        // Text search option
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceVariant,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border.withOpacity(0.3)),
+          ),
+          child: InkWell(
+            onTap: () => _showLocationPicker(),
+            borderRadius: BorderRadius.circular(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: AppColors.textOnSecondary,
+                    size: 20,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Buscar por texto',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        'Busca direcciones usando Google Places',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.textSecondary,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -207,6 +313,7 @@ class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
       child: InkWell(
         onTap: () {
           widget.onLocationSelected(address);
+          ref.read(customerLocationProvider.notifier).setSelectedLocation(address);
           Navigator.pop(context);
         },
         borderRadius: BorderRadius.circular(16),
@@ -241,6 +348,8 @@ class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
                     ),
                     Text(
                       address.shortAddress,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,
@@ -292,6 +401,28 @@ class _AddressSelectorWidgetState extends ConsumerState<AddressSelectorWidget> {
       return 'Oficina - Coordinación';
     }
     return address.split(',').first.trim();
+  }
+
+  void _showMapPicker() async {
+    Navigator.pop(context); // Close address modal first
+    
+    final result = await Navigator.push<LocationData>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapLocationPickerScreen(
+          initialLocation: widget.selectedLocation,
+          title: 'Marcar punto de entrega',
+          confirmButtonText: 'Confirmar ubicación',
+        ),
+      ),
+    );
+    
+    if (result != null) {
+      widget.onLocationSelected(result);
+      
+      // Save to user's saved locations
+      await ref.read(customerLocationProvider.notifier).saveLocation(result);
+    }
   }
 
   void _showLocationPicker() {

@@ -1,11 +1,14 @@
 
 import 'package:clonubereat/models/user_model.dart';
+import 'package:clonubereat/models/location_model.dart';
 
 class Customer extends User {
   final int totalOrders;
   final double totalSpent;
   final double averageRating;
-  final String preferredLocation;
+  final String preferredLocation; // Legacy field for backward compatibility
+  final LocationData? preferredLocationData; // New precise location with coordinates
+  final List<LocationData>? savedLocations; // Multiple saved campus locations
 
   Customer({
     required super.id,
@@ -20,6 +23,8 @@ class Customer extends User {
     required this.totalSpent,
     required this.averageRating,
     required this.preferredLocation,
+    this.preferredLocationData,
+    this.savedLocations,
   }) : super(
           role: UserRole.customer,
         );
@@ -32,6 +37,8 @@ class Customer extends User {
       'totalSpent': totalSpent,
       'averageRating': averageRating,
       'preferredLocation': preferredLocation,
+      'preferredLocationData': preferredLocationData?.toMap(),
+      'savedLocations': savedLocations?.map((loc) => loc.toMap()).toList(),
     };
   }
 
@@ -50,6 +57,14 @@ class Customer extends User {
       totalSpent: (map['totalSpent'] as num).toDouble(),
       averageRating: (map['averageRating'] as num).toDouble(),
       preferredLocation: map['preferredLocation'] as String,
+      preferredLocationData: map['preferredLocationData'] != null
+          ? LocationData.fromMap(map['preferredLocationData'] as Map<String, dynamic>)
+          : null,
+      savedLocations: map['savedLocations'] != null
+          ? (map['savedLocations'] as List<dynamic>)
+              .map((loc) => LocationData.fromMap(loc as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 
@@ -67,8 +82,9 @@ class Customer extends User {
     double? totalSpent,
     double? averageRating,
     String? preferredLocation,
+    LocationData? preferredLocationData,
+    List<LocationData>? savedLocations,
   }) {
-
     return Customer(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -82,6 +98,8 @@ class Customer extends User {
       totalSpent: totalSpent ?? this.totalSpent,
       averageRating: averageRating ?? this.averageRating,
       preferredLocation: preferredLocation ?? this.preferredLocation,
+      preferredLocationData: preferredLocationData ?? this.preferredLocationData,
+      savedLocations: savedLocations ?? this.savedLocations,
     );
   }
 }

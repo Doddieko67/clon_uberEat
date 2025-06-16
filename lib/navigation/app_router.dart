@@ -27,6 +27,7 @@ import '../screens/deliverer/delivery_history_screen.dart';
 import '../screens/deliverer/deliverer_location_screen.dart';
 import '../screens/debug/maps_test_screen.dart';
 import '../screens/debug/places_test_screen.dart';
+import '../screens/debug/location_demo_screen.dart';
 import 'customer_shell.dart';
 import 'store_shell.dart';
 import 'deliverer_shell.dart';
@@ -115,6 +116,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/debug/places',
       builder: (context, state) => PlacesTestScreen(),
+    ),
+    GoRoute(
+      path: '/debug/location',
+      builder: (context, state) => LocationDemoScreen(),
     ),
 
     // Customer routes with shell navigation
