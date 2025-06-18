@@ -1,0 +1,610 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{float}
+
+% Configuración de página
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=3cm,
+    right=2.5cm
+}
+
+% Configuración de header height
+\setlength{\headheight}{25pt}
+
+% Configuración de colores
+\definecolor{primaryblue}{RGB}{0,102,204}
+\definecolor{secondaryblue}{RGB}{51,153,255}
+\definecolor{lightgray}{RGB}{245,245,245}
+
+% Configuración de encabezados y pies de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{primaryblue}{\textbf{Manual Técnico - UberEats Clone}}}
+\fancyhead[R]{\textcolor{primaryblue}{\thepage}}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{primaryblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% Configuración de títulos
+\titleformat{\section}
+{\Large\bfseries\color{primaryblue}}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\large\bfseries\color{secondaryblue}}
+{\thesubsection}{1em}{}
+
+% Configuración de enlaces
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=primaryblue,
+    urlcolor=primaryblue,
+}
+
+% Configuración de código
+\lstset{
+    backgroundcolor=\color{lightgray},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    captionpos=b,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    showstringspaces=false,
+    tabsize=2
+}
+
+\begin{document}
+
+% Portada
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\textbf{\textcolor{primaryblue}{MANUAL TÉCNICO}}}
+    
+    \vspace{1cm}
+    
+    {\LARGE\textbf{Aplicación UberEats Clone}}
+    
+    \vspace{1cm}
+    
+    {\Large Sistema de Gestión de Pedidos y Entregas}
+    
+    \vspace{2cm}
+    
+    \begin{figure}[H]
+        \centering
+        \textcolor{primaryblue}{\rule{8cm}{0.5pt}}
+    \end{figure}
+    
+    \vspace{2cm}
+    
+    {\large\textbf{Versión:} 1.0}
+    
+    \vspace{0.5cm}
+    
+    {\large\textbf{Fecha:} \today}
+    
+    \vspace{2cm}
+    
+    {\large\textit{Documentación Técnica Completa del Proyecto}}
+    
+    \vfill
+    
+    {\large\textcolor{primaryblue}{\textbf{Tecnologías: Flutter • Firebase • Google Maps • Riverpod}}}
+    
+\end{titlepage}
+
+% Índice
+\tableofcontents
+\newpage
+
+% Contenido del manual
+\section{Resumen Ejecutivo}
+
+La aplicación UberEats Clone es un sistema completo de gestión de pedidos y entregas que replica las funcionalidades principales de plataformas de delivery como UberEats. El proyecto implementa un ecosistema completo con roles diferenciados para clientes, tiendas y repartidores, incluyendo características avanzadas como análisis en tiempo real, gestión de inventario, sistema de pagos y comunicación integrada.
+
+\section{Objetivo del Proyecto}
+
+\subsection{Objetivo General}
+Desarrollar una aplicación móvil multiplataforma que facilite la gestión integral de pedidos de comida, desde la selección de productos hasta la entrega final, proporcionando una experiencia de usuario fluida y herramientas de gestión empresarial robustas.
+
+\subsection{Objetivos Específicos}
+\begin{itemize}[itemsep=0.5em]
+    \item Implementar un sistema de autenticación seguro con Firebase Auth
+    \item Crear interfaces diferenciadas para clientes, tiendas y repartidores
+    \item Desarrollar un sistema de pedidos en tiempo real con seguimiento GPS
+    \item Integrar un sistema completo de gestión de pagos
+    \item Implementar análisis de ventas y métricas para tiendas
+    \item Crear un sistema de gestión de inventario automatizado
+    \item Desarrollar notificaciones push y sistema de comunicación
+    \item Garantizar escalabilidad y mantenibilidad del código
+\end{itemize}
+
+\subsection{Parámetros de Evaluación}
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Criterio} & \textbf{Especificación} \\
+\midrule
+Funcionalidad & Sistema completo de pedidos y entregas \\
+Usabilidad & Interfaz intuitiva y responsive \\
+Rendimiento & Tiempo de respuesta < 2 segundos \\
+Seguridad & Autenticación robusta y datos encriptados \\
+Escalabilidad & Arquitectura modular con Riverpod \\
+Multiplataforma & Compatible Android e iOS \\
+Tiempo Real & Actualizaciones instantáneas vía Firebase \\
+\bottomrule
+\end{tabular}
+\caption{Parámetros de evaluación del proyecto}
+\end{table}
+
+\section{Tecnologías y Lenguajes Utilizados}
+
+\subsection{Lenguajes de Programación}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Dart}: Lenguaje principal para desarrollo Flutter
+    \item \textbf{JavaScript}: Para funciones de Firebase Cloud Functions
+    \item \textbf{Kotlin/Java}: Para configuraciones nativas Android
+    \item \textbf{Swift/Objective-C}: Para configuraciones nativas iOS
+\end{itemize}
+
+\subsection{Framework Principal}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Flutter 3.x}: Framework multiplataforma de Google
+    \item \textbf{Dart SDK}: Entorno de desarrollo
+    \item \textbf{Material Design}: Sistema de diseño de Google
+\end{itemize}
+
+\subsection{Backend y Base de Datos}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Firebase Firestore}: Base de datos NoSQL en tiempo real
+    \item \textbf{Firebase Auth}: Sistema de autenticación
+    \item \textbf{Firebase Storage}: Almacenamiento de archivos
+    \item \textbf{Firebase Messaging}: Notificaciones push
+    \item \textbf{Firebase Functions}: Lógica del servidor
+\end{itemize}
+
+\subsection{Gestión de Estado y Arquitectura}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Riverpod}: Gestión de estado reactiva
+    \item \textbf{Provider Pattern}: Arquitectura de inyección de dependencias
+    \item \textbf{Repository Pattern}: Abstracción de datos
+\end{itemize}
+
+\subsection{APIs y Servicios Externos}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Google Maps API}: Mapas y geolocalización
+    \item \textbf{Places API}: Búsqueda de lugares
+    \item \textbf{Geocoding API}: Conversión de coordenadas
+    \item \textbf{Firebase Cloud Messaging}: Notificaciones
+\end{itemize}
+
+\subsection{Librerías y Dependencias Principales}
+\begin{longtable}{@{}lll@{}}
+\toprule
+\textbf{Librería} & \textbf{Versión} & \textbf{Propósito} \\
+\midrule
+flutter\_riverpod & \textasciicircum{}2.4.9 & Gestión de estado \\
+firebase\_core & \textasciicircum{}2.24.2 & Configuración Firebase \\
+cloud\_firestore & \textasciicircum{}4.13.6 & Base de datos \\
+firebase\_auth & \textasciicircum{}4.15.3 & Autenticación \\
+google\_maps\_flutter & \textasciicircum{}2.5.0 & Mapas integrados \\
+geolocator & \textasciicircum{}10.1.0 & Geolocalización \\
+image\_picker & \textasciicircum{}1.0.4 & Selección de imágenes \\
+fl\_chart & \textasciicircum{}0.65.0 & Gráficos y análisis \\
+firebase\_messaging & \textasciicircum{}14.7.10 & Notificaciones push \\
+flutter\_local\_notifications & \textasciicircum{}16.3.0 & Notificaciones locales \\
+url\_launcher & \textasciicircum{}6.2.2 & Navegación externa \\
+permission\_handler & \textasciicircum{}11.1.0 & Permisos del sistema \\
+\bottomrule
+\caption{Principales dependencias del proyecto}
+\end{longtable}
+
+\section{Arquitectura del Sistema}
+
+\subsection{Patrón de Arquitectura}
+El proyecto implementa una \textbf{arquitectura en capas} con separación clara de responsabilidades:
+
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Capa de Presentación}: Screens y Widgets
+    \item \textbf{Capa de Lógica de Negocio}: Providers y Notifiers
+    \item \textbf{Capa de Datos}: Services y Repositories
+    \item \textbf{Capa de Modelos}: Data Models y DTOs
+\end{itemize}
+
+\subsection{Estructura de Directorios}
+\begin{lstlisting}[language=bash, caption=Estructura del proyecto]
+lib/
+|-- models/                    # Modelos de datos
+|   |-- payment_model.dart
+|   |-- analytics_model.dart
+|   |-- inventory_model.dart
+|   |-- notification_model.dart
+|   |-- chat_model.dart
+|   |-- order_model.dart
+|-- services/                  # Servicios y APIs
+|   |-- payment_service.dart
+|   |-- notification_service.dart
+|   |-- location_service.dart
+|   |-- firebase_service.dart
+|-- providers/                 # Gestion de estado
+|   |-- payment_provider.dart
+|   |-- analytics_provider.dart
+|   |-- inventory_provider.dart
+|   |-- auth_provider.dart
+|-- screens/                   # Pantallas de la aplicacion
+|   |-- customer/
+|   |-- store/
+|   |-- deliverer/
+|-- widgets/                   # Componentes reutilizables
+|-- utils/                     # Utilidades y helpers
+\end{lstlisting}
+
+\section{Funcionalidades Implementadas}
+
+\subsection{Sistema de Autenticación}
+\begin{itemize}[itemsep=0.5em]
+    \item Registro y login con email/contraseña
+    \item Autenticación con Google Sign-In
+    \item Gestión de sesiones persistentes
+    \item Roles diferenciados (cliente, tienda, repartidor)
+    \item Recuperación de contraseñas
+\end{itemize}
+
+\subsection{Gestión de Pedidos}
+\begin{itemize}[itemsep=0.5em]
+    \item Catálogo de productos con filtros
+    \item Carrito de compras interactivo
+    \item Sistema de reordenar pedidos anteriores
+    \item Seguimiento en tiempo real de pedidos
+    \item Estados de pedido automatizados
+    \item Historial completo de pedidos
+\end{itemize}
+
+\subsection{Sistema de Pagos}
+\begin{itemize}[itemsep=0.5em]
+    \item Múltiples métodos de pago (tarjeta, efectivo, digital)
+    \item Validación de tarjetas con algoritmo de Luhn
+    \item Cálculo automático de propinas (0\%, 10\%, 15\%, 20\%)
+    \item Procesamiento seguro de transacciones
+    \item Historial de pagos y reembolsos
+    \item Integración preparada para gateways reales
+\end{itemize}
+
+\subsection{Análisis y Métricas (Dashboard)}
+\begin{itemize}[itemsep=0.5em]
+    \item Métricas de ventas en tiempo real
+    \item Gráficos de ingresos con fl\_chart
+    \item Análisis de productos más vendidos
+    \item Identificación de horas pico
+    \item Tasas de finalización de pedidos
+    \item Reportes por períodos personalizables
+\end{itemize}
+
+\subsection{Gestión de Inventario}
+\begin{itemize}[itemsep=0.5em]
+    \item Seguimiento de stock en tiempo real
+    \item Alertas de inventario bajo
+    \item Historial de movimientos de inventario
+    \item Gestión de proveedores
+    \item Costos y precios automatizados
+    \item Reportes de rotación de productos
+\end{itemize}
+
+\subsection{Sistema de Notificaciones}
+\begin{itemize}[itemsep=0.5em]
+    \item Notificaciones push con Firebase Messaging
+    \item Notificaciones locales por categorías
+    \item Configuración de preferencias por usuario
+    \item Notificaciones de pedidos, chat, inventario
+    \item Horarios de silencio configurables
+    \item Badges y contadores de notificaciones
+\end{itemize}
+
+\subsection{Comunicación y Chat}
+\begin{itemize}[itemsep=0.5em]
+    \item Sistema de chat tienda-cliente
+    \item Integración con WhatsApp
+    \item Mensajes pre-configurados
+    \item Estados de mensaje (enviado, entregado, leído)
+    \item Soporte para texto, imágenes y ubicación
+    \item Notificaciones de nuevos mensajes
+\end{itemize}
+
+\subsection{Seguimiento y Entrega}
+\begin{itemize}[itemsep=0.5em]
+    \item Seguimiento GPS en tiempo real
+    \item Mapas interactivos con Google Maps
+    \item Rutas optimizadas para repartidores
+    \item Estimación de tiempos de entrega
+    \item Notificaciones de proximidad
+    \item Confirmación de entrega con ubicación
+\end{itemize}
+
+\section{Flujo de Lógica del Negocio}
+
+\subsection{Flujo Principal del Cliente}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Autenticación}: Registro/Login con email o Google
+    \item \textbf{Exploración}: Búsqueda de tiendas y productos
+    \item \textbf{Selección}: Agregado de productos al carrito
+    \item \textbf{Configuración}: Dirección de entrega y método de pago
+    \item \textbf{Pago}: Procesamiento seguro de la transacción
+    \item \textbf{Seguimiento}: Monitoreo en tiempo real del pedido
+    \item \textbf{Comunicación}: Chat con la tienda si es necesario
+    \item \textbf{Recepción}: Confirmación de entrega
+    \item \textbf{Evaluación}: Calificación del servicio
+\end{enumerate}
+
+\subsection{Flujo de Gestión de Tienda}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Configuración}: Setup inicial de la tienda
+    \item \textbf{Inventario}: Gestión de productos y stock
+    \item \textbf{Pedidos}: Recepción y procesamiento de órdenes
+    \item \textbf{Preparación}: Actualización de estados de pedido
+    \item \textbf{Comunicación}: Chat con clientes cuando necesario
+    \item \textbf{Analytics}: Revisión de métricas y ventas
+    \item \textbf{Notificaciones}: Alertas de inventario y pedidos
+\end{enumerate}
+
+\subsection{Flujo del Repartidor}
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Disponibilidad}: Marcado como disponible
+    \item \textbf{Asignación}: Recepción de pedidos asignados
+    \item \textbf{Recolección}: Navegación a la tienda
+    \item \textbf{Confirmación}: Pickup del pedido
+    \item \textbf{Entrega}: Navegación al cliente con GPS
+    \item \textbf{Comunicación}: Contacto con cliente vía WhatsApp
+    \item \textbf{Finalización}: Confirmación de entrega
+\end{enumerate}
+
+\section{Base de Datos y Modelos}
+
+\subsection{Colecciones de Firestore}
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Colección} & \textbf{Propósito} \\
+\midrule
+users & Información de usuarios y perfiles \\
+stores & Datos de tiendas y configuración \\
+products & Catálogo de productos \\
+orders & Pedidos y su estado \\
+payments & Transacciones de pago \\
+inventory & Stock y movimientos \\
+notifications & Historial de notificaciones \\
+chat\_rooms & Conversaciones tienda-cliente \\
+deliveries & Información de entregas \\
+analytics & Métricas y estadísticas \\
+\bottomrule
+\end{tabular}
+\caption{Estructura de base de datos en Firestore}
+\end{table}
+
+\subsection{Modelos de Datos Principales}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{User Model}: Autenticación y perfil de usuario
+    \item \textbf{Store Model}: Información y configuración de tiendas
+    \item \textbf{Product Model}: Catálogo de productos con precios
+    \item \textbf{Order Model}: Pedidos con estados y seguimiento
+    \item \textbf{Payment Model}: Transacciones y métodos de pago
+    \item \textbf{Inventory Model}: Stock y alertas de inventario
+    \item \textbf{Analytics Model}: Métricas y KPIs
+    \item \textbf{Notification Model}: Configuración de notificaciones
+\end{itemize}
+
+\section{Configuración y Despliegue}
+
+\subsection{Requisitos del Sistema}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Flutter SDK}: 3.16.0 o superior
+    \item \textbf{Dart SDK}: 3.2.0 o superior
+    \item \textbf{Android Studio}: Para desarrollo Android
+    \item \textbf{Xcode}: Para desarrollo iOS (macOS)
+    \item \textbf{Firebase Project}: Configurado con todos los servicios
+    \item \textbf{Google Maps API}: Claves de API configuradas
+\end{itemize}
+
+\subsection{Comandos de Construccion}
+\begin{lstlisting}[language=bash, caption=Comandos principales]
+# Instalar dependencias
+flutter pub get
+
+# Analizar codigo
+flutter analyze
+
+# Ejecutar tests
+flutter test
+
+# Limpiar proyecto
+flutter clean
+
+# Construir APK debug
+flutter build apk --debug
+
+# Construir APK release
+flutter build apk --release
+
+# Ejecutar aplicacion
+flutter run
+\end{lstlisting}
+
+\subsection{Configuracion de Firebase}
+\begin{enumerate}[label=\arabic*.]
+    \item Crear proyecto en Firebase Console
+    \item Habilitar Authentication (Email/Password y Google)
+    \item Configurar Firestore con reglas de seguridad
+    \item Activar Firebase Storage
+    \item Configurar Firebase Messaging
+    \item Descargar archivos de configuracion:
+    \begin{itemize}
+        \item \texttt{google-services.json} para Android
+        \item \texttt{GoogleService-Info.plist} para iOS
+    \end{itemize}
+\end{enumerate}
+
+\section{Analisis de Costos}
+
+\subsection{Costos de Desarrollo}
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Recurso} & \textbf{Tiempo} & \textbf{Descripción} \\
+\midrule
+Análisis y Diseño & 40 horas & Planificación y wireframes \\
+Desarrollo Frontend & 120 horas & UI/UX y funcionalidades \\
+Integración Backend & 60 horas & Firebase y APIs \\
+Testing y QA & 30 horas & Pruebas y correcciones \\
+Documentación & 20 horas & Manual técnico y guías \\
+\midrule
+\textbf{Total} & \textbf{270 horas} & \textbf{Tiempo total de desarrollo} \\
+\bottomrule
+\end{tabular}
+\caption{Estimación de tiempo de desarrollo}
+\end{table}
+
+\subsection{Costos de Infraestructura}
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Servicio} & \textbf{Costo Mensual} & \textbf{Límites} \\
+\midrule
+Firebase Firestore & \$0 - \$25 & Según uso y lecturas/escrituras \\
+Firebase Auth & Gratis & Hasta 50,000 usuarios \\
+Firebase Storage & \$0 - \$10 & Según almacenamiento usado \\
+Google Maps API & \$0 - \$200 & Según consultas de mapas \\
+Firebase Messaging & Gratis & Notificaciones ilimitadas \\
+\midrule
+\textbf{Total Estimado} & \textbf{\$0 - \$235} & \textbf{Para aplicación pequeña-mediana} \\
+\bottomrule
+\end{tabular}
+\caption{Costos estimados de servicios en la nube}
+\end{table}
+
+\subsection{Costos de Distribución}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Google Play Store}: \$25 (pago único para cuenta de desarrollador)
+    \item \textbf{Apple App Store}: \$99/año (membresía de desarrollador)
+    \item \textbf{Certificados de Firma}: Incluidos en las membresías
+\end{itemize}
+
+\section{Referencias Tecnicas}
+
+\subsection{Documentacion Oficial}
+\begin{itemize}[itemsep=0.5em]
+    \item Flutter Documentation: \url{https://docs.flutter.dev/}
+    \item Firebase Documentation: \url{https://firebase.google.com/docs}
+    \item Riverpod Documentation: \url{https://riverpod.dev/}
+    \item Google Maps Flutter: \url{https://pub.dev/packages/google_maps_flutter}
+    \item Material Design Guidelines: \url{https://material.io/design}
+\end{itemize}
+
+\subsection{Librerias y Paquetes}
+\begin{itemize}[itemsep=0.5em]
+    \item Pub.dev - Flutter Packages: \url{https://pub.dev/}
+    \item Firebase Flutter Plugins: \url{https://firebase.flutter.dev/}
+    \item FL Chart Documentation: \url{https://github.com/imaNNeo/fl_chart}
+    \item Geolocator Plugin: \url{https://pub.dev/packages/geolocator}
+\end{itemize}
+
+\subsection{APIs y Servicios}
+\begin{itemize}[itemsep=0.5em]
+    \item Google Maps Platform: \url{https://developers.google.com/maps}
+    \item Firebase Console: \url{https://console.firebase.google.com/}
+    \item Google Cloud Console: \url{https://console.cloud.google.com/}
+\end{itemize}
+
+\section{Consideraciones de Seguridad}
+
+\subsection{Autenticacion y Autorizacion}
+\begin{itemize}[itemsep=0.5em]
+    \item Tokens JWT manejados automaticamente por Firebase Auth
+    \item Reglas de seguridad de Firestore por roles de usuario
+    \item Validacion de permisos en el lado del servidor
+    \item Sesiones seguras con renovacion automatica
+\end{itemize}
+
+\subsection{Proteccion de Datos}
+\begin{itemize}[itemsep=0.5em]
+    \item Encriptacion en transito (HTTPS/TLS)
+    \item Encriptacion en reposo (Firebase)
+    \item Validacion de datos de entrada
+    \item Sanitizacion de datos sensibles
+    \item Cumplimiento con mejores practicas de privacidad
+\end{itemize}
+
+\section{Mantenimiento y Escalabilidad}
+
+\subsection{Monitoreo}
+\begin{itemize}[itemsep=0.5em]
+    \item Firebase Analytics para metricas de uso
+    \item Crashlytics para reporte de errores
+    \item Performance Monitoring para optimizacion
+    \item Alertas automaticas de Firebase
+\end{itemize}
+
+\subsection{Escalabilidad}
+\begin{itemize}[itemsep=0.5em]
+    \item Arquitectura modular con Riverpod
+    \item Firestore automaticamente escalable
+    \item Caching estrategico en la aplicacion
+    \item Optimizacion de consultas de base de datos
+    \item Lazy loading de contenido
+\end{itemize}
+
+\section{Conclusiones}
+
+El proyecto UberEats Clone representa una implementacion completa y robusta de un sistema de delivery de comida. La aplicacion cumple con todos los requisitos funcionales establecidos y proporciona una base solida para un producto comercial.
+
+\subsection{Fortalezas del Proyecto}
+\begin{itemize}[itemsep=0.5em]
+    \item \textbf{Arquitectura Solida}: Separacion clara de responsabilidades
+    \item \textbf{Tecnologias Modernas}: Stack tecnologico actualizado y mantenible
+    \item \textbf{Escalabilidad}: Diseno preparado para crecimiento
+    \item \textbf{Funcionalidad Completa}: Todas las caracteristicas de una app de delivery
+    \item \textbf{Experiencia de Usuario}: Interfaces intuitivas y responsivas
+    \item \textbf{Tiempo Real}: Actualizaciones instantaneas y seguimiento live
+\end{itemize}
+
+\subsection{Oportunidades de Mejora}
+\begin{itemize}[itemsep=0.5em]
+    \item Integracion con gateways de pago reales
+    \item Implementacion de machine learning para recomendaciones
+    \item Optimizacion adicional de rendimiento
+    \item Expansion de funcionalidades de analisis
+    \item Implementacion de tests automatizados mas extensivos
+\end{itemize}
+
+\vspace{2cm}
+
+\begin{center}
+\textcolor{primaryblue}{\rule{12cm}{0.5pt}}
+\vspace{0.5cm}
+
+\textit{Este manual técnico documenta completamente la implementación\\
+del sistema UberEats Clone desarrollado con Flutter y Firebase.}
+
+\vspace{0.5cm}
+\textcolor{primaryblue}{\rule{12cm}{0.5pt}}
+\end{center}
+
+\end{document}

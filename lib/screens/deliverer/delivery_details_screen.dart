@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../widgets/delivery_map_widget.dart';
 
 class DeliveryDetailsScreen extends ConsumerStatefulWidget {
   @override
@@ -389,6 +390,8 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
             SizedBox(height: 24),
             _buildLocationInfo(),
             SizedBox(height: 24),
+            _buildMapPreview(),
+            SizedBox(height: 24),
             _buildCustomerInfo(),
             SizedBox(height: 24),
             _buildOrderSummary(),
@@ -597,11 +600,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
       actions: [
         IconButton(
           onPressed: () {
-            // Mostrar mapa en pantalla completa
-            // TODO: Implementar ruta para ver ubicación de cliente
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Función de mapa en desarrollo')),
-            );
+            _showFullScreenMap();
           },
           icon: Icon(Icons.map, color: AppColors.textSecondary),
           tooltip: 'Ver en mapa',
@@ -1039,10 +1038,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
                   ),
                   IconButton(
                     onPressed: () {
-                      // TODO: Implementar navegación a mapa de ubicación
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Función de mapa en desarrollo')),
-                      );
+                      _showFullScreenMap();
                     },
                     icon: Icon(Icons.map, color: AppColors.primary),
                     style: IconButton.styleFrom(
@@ -1051,6 +1047,7 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                    tooltip: 'Ver en mapa',
                   ),
                 ],
               ),
@@ -1398,6 +1395,82 @@ class _DeliveryDetailsScreenState extends ConsumerState<DeliveryDetailsScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapPreview() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.map, color: AppColors.primary, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Ruta de entrega',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Spacer(),
+                TextButton(
+                  onPressed: _showFullScreenMap,
+                  child: Text(
+                    'Ver completo',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          DeliveryMapWidget(
+            storeLocation: _order?.storeLocation,
+            deliveryLocation: _order?.deliveryLocation,
+            delivererLatitude: _currentLocation?.latitude ?? _order?.delivererLatitude,
+            delivererLongitude: _currentLocation?.longitude ?? _order?.delivererLongitude,
+            height: 200,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFullScreenMap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text('Ruta de entrega'),
+            backgroundColor: AppColors.surface,
+            elevation: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, color: AppColors.textSecondary),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: DeliveryMapWidget(
+            storeLocation: _order?.storeLocation,
+            deliveryLocation: _order?.deliveryLocation,
+            delivererLatitude: _currentLocation?.latitude ?? _order?.delivererLatitude,
+            delivererLongitude: _currentLocation?.longitude ?? _order?.delivererLongitude,
+            height: MediaQuery.of(context).size.height,
           ),
         ),
       ),
